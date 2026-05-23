@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Determinant Visualization</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #07111e;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #e2e8f0;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+  .header { margin-bottom: 18px; }
+  .header a { color: #475569; font-size: 12px; text-decoration: none; display: inline-block; margin-bottom: 10px; }
+  .header a:hover { color: #94a3b8; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .header p { color: #64748b; font-size: 13px; margin: 0; }
+  .layout { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  .left { flex: 0 0 210px; display: flex; flex-direction: column; gap: 10px; }
+  .right { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: #12203a; border-radius: 12px; padding: 14px; }
+  .info-card { background: #12203a; border-radius: 12px; padding: 14px; border-left: 3px solid #475569; transition: border-color 0.2s; }
+  .label { font-size: 10px; color: #475569; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 10px; }
+  .matrix-display { display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .matrix-bracket { font-size: 34px; color: #2d4a6a; line-height: 1; }
+  .matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .matrix-input { width: 46px; padding: 5px 4px; border-radius: 6px; border: 1px solid #1e3454; background: #0a1628; font-size: 15px; text-align: center; outline: none; font-weight: 700; color-scheme: dark; font-family: inherit; }
+  .matrix-input[data-row="0"] { color: #fbbf24; }
+  .matrix-input[data-row="1"] { color: #818cf8; }
+  .matrix-input:focus { border-color: #3a5070; }
+  .det-block { margin-top: 12px; text-align: center; }
+  .det-label { font-size: 10px; color: #334a6a; letter-spacing: 0.08em; }
+  .det-value { font-size: 42px; font-weight: 800; line-height: 1.05; transition: color 0.2s; color: #4ade80; }
+  .det-formula { font-size: 10px; color: #2a3f60; margin-top: 2px; font-family: ui-monospace, SFMono-Regular, monospace; }
+  .k-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .k-value { font-size: 17px; font-weight: 800; color: #c4b5fd; }
+  .k-bounds { display: flex; justify-content: space-between; font-size: 10px; color: #2d4060; margin-top: 2px; }
+  input[type="range"] { width: 100%; accent-color: #7c3aed; }
+  .op-section { display: flex; flex-direction: column; gap: 7px; }
+  .op-hint { font-size: 10px; color: #3a5070; margin-top: 2px; }
+  .op-row { display: flex; gap: 6px; }
+  button.op-btn { flex: 1; padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; color: #f1f5f9; font-family: inherit; transition: background 0.1s; }
+  button.op-btn:active { transform: scale(0.97); }
+  button.op-btn.swap { padding: 9px; font-size: 13px; border: 1px solid #7c3aed50; background: #7c3aed18; }
+  button.op-btn.swap:hover { background: #7c3aed28; }
+  button.op-btn.scale { border: 1px solid #f59e0b50; background: #f59e0b18; }
+  button.op-btn.scale:hover { background: #f59e0b28; }
+  button.op-btn.add { border: 1px solid #22d3ee50; background: #22d3ee18; }
+  button.op-btn.add:hover { background: #22d3ee28; }
+  button.op-btn.reset { border: 1px solid #47556950; background: #47556918; }
+  button.op-btn.reset:hover { background: #47556928; }
+  button.op-btn.view { border: 1px solid #33415550; background: #33415518; font-size: 11px; }
+  button.op-btn.view:hover { background: #33415528; }
+  .viz-container { background: #0a1422; border-radius: 12px; overflow: hidden; position: relative; }
+  #svg { display: block; width: 100%; aspect-ratio: 500 / 420; cursor: grab; touch-action: none; user-select: none; }
+  #svg.panning { cursor: grabbing; }
+  .viz-hint { position: absolute; bottom: 8px; left: 8px; font-size: 10px; color: #2d4060; pointer-events: none; }
+  #info-title { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  #info-body { font-size: 12px; color: #94a3b8; line-height: 1.7; }
+  .log-row { display: flex; justify-content: space-between; padding: 4px 0; }
+  .log-label { font-size: 11px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 76%; }
+  .log-det { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <a href="index.html">← all visualizations</a>
+    <h1>Determinant Visualization</h1>
+    <p>The shaded parallelogram's signed area equals the determinant. Watch how elementary row operations change it.</p>
+  </div>
+
+  <div class="layout">
+    <div class="left">
+      <div class="card">
+        <div class="label">MATRIX M</div>
+        <div class="matrix-display">
+          <span class="matrix-bracket">[</span>
+          <div class="matrix-grid">
+            <input type="number" step="0.5" class="matrix-input" data-row="0" data-col="0">
+            <input type="number" step="0.5" class="matrix-input" data-row="0" data-col="1">
+            <input type="number" step="0.5" class="matrix-input" data-row="1" data-col="0">
+            <input type="number" step="0.5" class="matrix-input" data-row="1" data-col="1">
+          </div>
+          <span class="matrix-bracket">]</span>
+        </div>
+        <div class="det-block">
+          <div class="det-label">det(M)</div>
+          <div class="det-value" id="det-value">4</div>
+          <div class="det-formula" id="det-formula"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="k-row">
+          <span class="label" style="margin: 0;">SCALAR k</span>
+          <span class="k-value" id="k-value">2</span>
+        </div>
+        <input type="range" min="-4" max="4" step="0.5" value="2" id="k-slider">
+        <div class="k-bounds"><span>−4</span><span>0</span><span>4</span></div>
+      </div>
+
+      <div class="card">
+        <div class="label">ROW OPERATIONS</div>
+        <div class="op-section">
+          <button class="op-btn swap" id="btn-swap">↔ Swap R₁ ↔ R₂</button>
+          <div class="op-hint">Multiply row by k:</div>
+          <div class="op-row">
+            <button class="op-btn scale" id="btn-s1">k · R₁</button>
+            <button class="op-btn scale" id="btn-s2">k · R₂</button>
+          </div>
+          <div class="op-hint">Add multiple of row:</div>
+          <div class="op-row">
+            <button class="op-btn add" id="btn-a12">R₁+k·R₂</button>
+            <button class="op-btn add" id="btn-a21">R₂+k·R₁</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="op-row">
+        <button class="op-btn reset" id="btn-reset">↩ Reset</button>
+        <button class="op-btn view" id="btn-view">⊹ View</button>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="viz-container">
+        <svg id="svg" viewBox="0 0 500 420">
+          <rect id="bg" />
+          <g id="grid-layer"></g>
+          <g id="dynamic-layer"></g>
+        </svg>
+        <div class="viz-hint">scroll to zoom · drag to pan · pinch on touch</div>
+      </div>
+
+      <div class="info-card" id="info-card">
+        <div id="info-title">How to read this</div>
+        <div id="info-body"></div>
+      </div>
+
+      <div class="card" id="history" style="display: none;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── constants ───────────────────────────────────────────────────────────
+  const W = 500, H = 420, CX = 250, CY = 210, SC = 48;
+  const ANIM_MS = 500, VB_MIN = W/7, VB_MAX = W*5;
+  const INIT = [[2,0],[1,2]];
+
+  // ── state ───────────────────────────────────────────────────────────────
+  let mat = INIT.map(r => r.slice());
+  let animMat = INIT.map(r => r.slice());
+  let inp = INIT.map(r => r.map(String));
+  let k = 2;
+  let hist = [];
+  let info;
+  let vb = {x:0, y:0, w:W, h:H};
+  let animRafId = null;
+  let panState = null;
+  let touchState = null;
+  let cachedGridKey = '';
+
+  // ── utilities ───────────────────────────────────────────────────────────
+  const toS = (x, y) => [CX + x*SC, CY - y*SC];
+  const calcDet = m => m[0][0]*m[1][1] - m[0][1]*m[1][0];
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const eio = t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+  const lerpM = (A, B, t) => A.map((r,i) => r.map((v,j) => v+(B[i][j]-v)*t));
+  const fmt = v => { const n = parseFloat((+v).toFixed(3)); return n === 0 ? 0 : n; };
+  const nice = v => Number.isInteger(v) ? v : parseFloat(v.toFixed(2));
+  const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // ── info messages ───────────────────────────────────────────────────────
+  const INFOS = {
+    none: { title: "How to read this", body: "The shaded parallelogram is formed by row vectors r₁ and r₂. Its signed area equals the determinant. Edit the matrix or apply a row operation to explore.", color: "#475569" },
+    swap: { title: "Row swap — det × (−1)", body: "Swapping two rows reverses the orientation of the parallelogram — like flipping it in a mirror. The area stays the same but the sign reverses. Every swap multiplies the determinant by −1.", color: "#a855f7" },
+    scale: (k, r) => ({ title: `Scale R${r} by ${k} — det × ${k}`, body: `Multiplying row ${r} by ${k} stretches that vector by ${k}. The area — and determinant — scales by exactly ${k}.${k === 0 ? " The matrix is now singular (det = 0)." : ""}`, color: "#f59e0b" }),
+    add: (k, t, s) => ({ title: `R${t} + ${k}·R${s} — det unchanged!`, body: `Adding a multiple of one row to another shears the parallelogram. The base and height stay the same, so the area — and determinant — is preserved. This is why Gaussian elimination works!`, color: "#22d3ee" }),
+  };
+  info = INFOS.none;
+
+  // ── DOM (cached after init) ─────────────────────────────────────────────
+  let svgEl, bgEl, gridLayerEl, dynLayerEl;
+  let detValueEl, detFormulaEl, kValueEl, infoCardEl, infoTitleEl, infoBodyEl, histEl;
+  let inputEls;
+
+  // ── SVG string builders ─────────────────────────────────────────────────
+  function arrowStr(from, to, color, label, dashed, sc) {
+    const [x1, y1] = toS(from[0], from[1]);
+    const [x2, y2] = toS(to[0], to[1]);
+    const dx = x2-x1, dy = y2-y1, len = Math.hypot(dx, dy);
+    if (len < 2) return '';
+    const θ = Math.atan2(dy, dx), sz = 11*sc;
+    const hp = `${x2},${y2} ${x2+sz*Math.cos(θ+2.5)},${y2+sz*Math.sin(θ+2.5)} ${x2+sz*Math.cos(θ-2.5)},${y2+sz*Math.sin(θ-2.5)}`;
+    const lx = (x1+x2)/2 + 22*sc*Math.cos(θ-Math.PI/2);
+    const ly = (y1+y2)/2 + 22*sc*Math.sin(θ-Math.PI/2);
+    const dashAttr = dashed ? ` stroke-dasharray="${6*sc},${4*sc}"` : '';
+    let out = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${dashed?1.5*sc:2.8*sc}" opacity="${dashed?0.4:1}"${dashAttr}/>`;
+    if (!dashed) out += `<polygon points="${hp}" fill="${color}"/>`;
+    if (label) out += `<text x="${lx}" y="${ly}" fill="${color}" font-size="${15*sc}" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+    return out;
+  }
+
+  function buildGridStr(vb) {
+    const span = vb.w / SC, sc = vb.w / W;
+    const step = [0.25, 0.5, 1, 2, 5, 10, 25].find(s => s >= span/8) || 25;
+    const dp = step < 1 ? 2 : step < 5 ? 1 : 0;
+    const fs = Math.max(7, 10 * sc);
+    const rnd = (v, s) => Math.round(v / s) * s;
+    const mxMin = Math.floor((vb.x - CX) / SC / step - 1) * step;
+    const mxMax = Math.ceil((vb.x + vb.w - CX) / SC / step + 1) * step;
+    const myMin = Math.floor((CY - vb.y - vb.h) / SC / step - 1) * step;
+    const myMax = Math.ceil((CY - vb.y) / SC / step + 1) * step;
+    const [, sy1] = toS(0, myMin - step), [, sy2] = toS(0, myMax + step);
+    const [sx1] = toS(mxMin - step, 0), [sx2] = toS(mxMax + step, 0);
+    const [ox, oy] = toS(0, 0);
+    let out = '';
+    for (let xi = Math.round(mxMin / step); xi <= Math.round(mxMax / step); xi++) {
+      const x = rnd(xi * step, step), [sx] = toS(x, 0), ax = Math.abs(x) < step * 0.01;
+      out += `<line x1="${sx}" y1="${sy1}" x2="${sx}" y2="${sy2}" stroke="${ax?'#4a6080':'#1a2840'}" stroke-width="${ax?1.5*sc:0.7*sc}"/>`;
+      if (!ax) out += `<text x="${sx}" y="${oy+13*sc}" text-anchor="middle" fill="#2d4a6a" font-size="${fs}">${x.toFixed(dp).replace(/\.?0+$/, '')}</text>`;
+    }
+    for (let yi = Math.round(myMin / step); yi <= Math.round(myMax / step); yi++) {
+      const y = rnd(yi * step, step), [, sy] = toS(0, y), ax = Math.abs(y) < step * 0.01;
+      out += `<line x1="${sx1}" y1="${sy}" x2="${sx2}" y2="${sy}" stroke="${ax?'#4a6080':'#1a2840'}" stroke-width="${ax?1.5*sc:0.7*sc}"/>`;
+      if (!ax) out += `<text x="${ox-13*sc}" y="${sy+4}" text-anchor="end" fill="#2d4a6a" font-size="${fs}">${y.toFixed(dp).replace(/\.?0+$/, '')}</text>`;
+    }
+    return out;
+  }
+
+  // ── renderers ───────────────────────────────────────────────────────────
+  function updateGridIfNeeded() {
+    const key = `${vb.x},${vb.y},${vb.w},${vb.h}`;
+    if (key !== cachedGridKey) {
+      cachedGridKey = key;
+      svgEl.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+      bgEl.setAttribute('x', vb.x);
+      bgEl.setAttribute('y', vb.y);
+      bgEl.setAttribute('width', vb.w);
+      bgEl.setAttribute('height', vb.h);
+      bgEl.setAttribute('fill', '#07111e');
+      gridLayerEl.innerHTML = buildGridStr(vb);
+    }
+  }
+
+  function renderDynamic() {
+    const [[da, db], [dc, de]] = animMat;
+    const ad = fmt(da*de - db*dc);
+    const isZero = Math.abs(ad) < 1e-6;
+    const dCol = isZero ? '#64748b' : ad > 0 ? '#4ade80' : '#f87171';
+    const pFill = isZero ? 'rgba(100,116,139,.1)' : ad > 0 ? 'rgba(74,222,128,.15)' : 'rgba(248,113,113,.18)';
+    const pStr = isZero ? 'rgba(100,116,139,.3)' : ad > 0 ? 'rgba(74,222,128,.6)' : 'rgba(248,113,113,.6)';
+    const [ox, oy] = toS(0, 0);
+    const [p1x, p1y] = toS(da, db);
+    const [p2x, p2y] = toS(dc, de);
+    const [p12x, p12y] = toS(da+dc, db+de);
+    const sc = vb.w / W;
+
+    const unitSq = [toS(0,0), toS(1,0), toS(1,1), toS(0,1)].map(p => p.join(',')).join(' ');
+    const paral = `${ox},${oy} ${p1x},${p1y} ${p12x},${p12y} ${p2x},${p2y}`;
+
+    let c = '';
+    c += `<polygon points="${unitSq}" fill="none" stroke="#ffffff08" stroke-width="${sc}" stroke-dasharray="${3*sc},${3*sc}"/>`;
+    c += `<polygon points="${paral}" fill="${pFill}" stroke="${pStr}" stroke-width="${1.5*sc}"/>`;
+    c += arrowStr([da, db], [da+dc, db+de], '#818cf8', null, true, sc);
+    c += arrowStr([dc, de], [da+dc, db+de], '#fbbf24', null, true, sc);
+    c += arrowStr([0, 0], [da, db], '#fbbf24', 'r₁', false, sc);
+    c += arrowStr([0, 0], [dc, de], '#818cf8', 'r₂', false, sc);
+    c += `<circle cx="${ox}" cy="${oy}" r="${4*sc}" fill="#3f5070"/>`;
+    if (Math.abs(ad) > 0.05) {
+      c += `<text x="${(ox+p1x+p2x+p12x)/4}" y="${(oy+p1y+p2y+p12y)/4}" fill="${dCol}" font-size="${12*sc}" font-weight="bold" text-anchor="middle" dominant-baseline="middle" opacity="0.85">|area| = ${Math.abs(ad)}</text>`;
+    }
+    const orient = isZero ? 'singular' : ad > 0 ? '↺ CCW · det > 0' : '↻ CW · det < 0';
+    c += `<text x="${vb.x+vb.w-8*sc}" y="${vb.y+vb.h-9*sc}" text-anchor="end" fill="${dCol}" font-size="${10*sc}" opacity="0.55">${orient}</text>`;
+    c += `<text x="${vb.x+8*sc}" y="${vb.y+18*sc}" fill="#fbbf24" font-size="${11*sc}" opacity="0.9">r₁ = (${fmt(da)}, ${fmt(db)})</text>`;
+    c += `<text x="${vb.x+8*sc}" y="${vb.y+33*sc}" fill="#818cf8" font-size="${11*sc}" opacity="0.9">r₂ = (${fmt(dc)}, ${fmt(de)})</text>`;
+
+    dynLayerEl.innerHTML = c;
+    detValueEl.textContent = ad;
+    detValueEl.style.color = dCol;
+  }
+
+  function renderMatrixInputs() {
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 2; col++) {
+        const el = inputEls[row][col];
+        if (document.activeElement !== el) el.value = inp[row][col];
+      }
+    }
+  }
+
+  function renderFormula() {
+    const [[a, b], [c, e]] = mat;
+    detFormulaEl.textContent = `${nice(a)}·${nice(e)} − ${nice(b)}·${nice(c)}`;
+  }
+
+  function renderK() { kValueEl.textContent = k; }
+
+  function renderInfo() {
+    infoCardEl.style.borderLeftColor = info.color;
+    infoTitleEl.textContent = info.title;
+    infoTitleEl.style.color = info.color;
+    infoBodyEl.textContent = info.body;
+  }
+
+  function renderHist() {
+    if (hist.length === 0) { histEl.style.display = 'none'; return; }
+    histEl.style.display = '';
+    let html = '<div class="label" style="margin-bottom: 8px;">LOG</div>';
+    hist.forEach((h, i) => {
+      const opacity = Math.max(0.25, 1 - i * 0.17);
+      const col = h.d > 1e-9 ? '#4ade80' : h.d < -1e-9 ? '#f87171' : '#94a3b8';
+      const bb = i < hist.length - 1 ? 'border-bottom: 1px solid #0a162a;' : '';
+      html += `<div class="log-row" style="opacity:${opacity};${bb}"><span class="log-label">${escapeHtml(h.label)}</span><span class="log-det" style="color:${col}">det=${fmt(h.d)}</span></div>`;
+    });
+    histEl.innerHTML = html;
+  }
+
+  // ── animation ───────────────────────────────────────────────────────────
+  function startAnim(from, to) {
+    if (animRafId !== null) cancelAnimationFrame(animRafId);
+    const t0 = performance.now();
+    function tick() {
+      const t = Math.min(1, (performance.now() - t0) / ANIM_MS);
+      animMat = lerpM(from, to, eio(t));
+      renderDynamic();
+      animRafId = t < 1 ? requestAnimationFrame(tick) : null;
+    }
+    animRafId = requestAnimationFrame(tick);
+  }
+
+  // ── operations ──────────────────────────────────────────────────────────
+  function apply(newMat, newInfo) {
+    const from = animMat.map(r => r.slice());
+    mat = newMat;
+    inp = newMat.map(r => r.map(v => String(nice(v))));
+    hist = [{ d: calcDet(newMat), label: newInfo.title }].concat(hist).slice(0, 5);
+    info = newInfo;
+    renderMatrixInputs();
+    renderFormula();
+    renderInfo();
+    renderHist();
+    startAnim(from, newMat);
+  }
+
+  function swap() { apply([mat[1].slice(), mat[0].slice()], INFOS.swap); }
+  function scaleR(row) {
+    const nm = mat.map((r, i) => i === row ? r.map(v => v * k) : r.slice());
+    apply(nm, INFOS.scale(k, row + 1));
+  }
+  function addR(target, source) {
+    const nm = mat.map((r, i) => i === target ? r.map((v, j) => v + k * mat[source][j]) : r.slice());
+    apply(nm, INFOS.add(k, target + 1, source + 1));
+  }
+  function resetAll() {
+    if (animRafId !== null) { cancelAnimationFrame(animRafId); animRafId = null; }
+    mat = INIT.map(r => r.slice());
+    animMat = INIT.map(r => r.slice());
+    inp = INIT.map(r => r.map(String));
+    hist = [];
+    info = INFOS.none;
+    renderMatrixInputs();
+    renderFormula();
+    renderInfo();
+    renderHist();
+    renderDynamic();
+  }
+  function resetView() {
+    vb = { x: 0, y: 0, w: W, h: H };
+    updateGridIfNeeded();
+    renderDynamic();
+  }
+
+  // ── pan / zoom ──────────────────────────────────────────────────────────
+  function setupPanZoom() {
+    function onWheel(e) {
+      e.preventDefault();
+      const fac = e.deltaY > 0 ? 1.1 : 1/1.1;
+      const nw = clamp(vb.w * fac, VB_MIN, VB_MAX);
+      const s = nw / vb.w, nh = vb.h * s;
+      const rect = svgEl.getBoundingClientRect();
+      const px = vb.x + (e.clientX - rect.left) * (vb.w / rect.width);
+      const py = vb.y + (e.clientY - rect.top) * (vb.h / rect.height);
+      vb = { x: px + (vb.x - px) * s, y: py + (vb.y - py) * s, w: nw, h: nh };
+      updateGridIfNeeded();
+      renderDynamic();
+    }
+    function onMouseDown(e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      panState = { sx: e.clientX, sy: e.clientY, sv: { ...vb } };
+      svgEl.classList.add('panning');
+    }
+    function onMouseMove(e) {
+      if (!panState) return;
+      const rect = svgEl.getBoundingClientRect();
+      const dx = (e.clientX - panState.sx) * (panState.sv.w / rect.width);
+      const dy = (e.clientY - panState.sy) * (panState.sv.h / rect.height);
+      vb = { ...panState.sv, x: panState.sv.x - dx, y: panState.sv.y - dy };
+      updateGridIfNeeded();
+      renderDynamic();
+    }
+    function onMouseUp() {
+      panState = null;
+      svgEl.classList.remove('panning');
+    }
+    function onTouchStart(e) {
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        panState = { sx: t.clientX, sy: t.clientY, sv: { ...vb } };
+        touchState = { type: 'pan' };
+      } else if (e.touches.length === 2) {
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        touchState = {
+          type: 'pinch',
+          d0: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
+          sv: { ...vb },
+          mx: (t1.clientX + t2.clientX) / 2,
+          my: (t1.clientY + t2.clientY) / 2,
+        };
+      }
+    }
+    function onTouchMove(e) {
+      e.preventDefault();
+      if (!touchState) return;
+      const rect = svgEl.getBoundingClientRect();
+      if (touchState.type === 'pan' && e.touches.length === 1 && panState) {
+        const t = e.touches[0];
+        const dx = (t.clientX - panState.sx) * (panState.sv.w / rect.width);
+        const dy = (t.clientY - panState.sy) * (panState.sv.h / rect.height);
+        vb = { ...panState.sv, x: panState.sv.x - dx, y: panState.sv.y - dy };
+      } else if (touchState.type === 'pinch' && e.touches.length === 2) {
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const fac = touchState.d0 / dist;
+        const sv = touchState.sv;
+        const nw = clamp(sv.w * fac, VB_MIN, VB_MAX);
+        const s = nw / sv.w;
+        const px = sv.x + (touchState.mx - rect.left) * (sv.w / rect.width);
+        const py = sv.y + (touchState.my - rect.top) * (sv.h / rect.height);
+        vb = { x: px + (sv.x - px) * s, y: py + (sv.y - py) * s, w: nw, h: nw * (H/W) };
+      }
+      updateGridIfNeeded();
+      renderDynamic();
+    }
+    function onTouchEnd() { panState = null; touchState = null; }
+
+    svgEl.addEventListener('wheel', onWheel, { passive: false });
+    svgEl.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    svgEl.addEventListener('touchstart', onTouchStart, { passive: true });
+    svgEl.addEventListener('touchmove', onTouchMove, { passive: false });
+    svgEl.addEventListener('touchend', onTouchEnd);
+    svgEl.addEventListener('touchcancel', onTouchEnd);
+  }
+
+  // ── input wiring ────────────────────────────────────────────────────────
+  function setupInputs() {
+    inputEls = [[null, null], [null, null]];
+    document.querySelectorAll('.matrix-input').forEach(el => {
+      const row = +el.dataset.row, col = +el.dataset.col;
+      inputEls[row][col] = el;
+      el.addEventListener('input', () => {
+        inp[row][col] = el.value;
+        const parsed = inp.map(r => r.map(Number));
+        const allValid = inp.flat().every(s => s.trim() !== '') && !parsed.flat().some(Number.isNaN);
+        if (allValid) {
+          if (animRafId !== null) { cancelAnimationFrame(animRafId); animRafId = null; }
+          mat = parsed;
+          animMat = parsed.map(r => r.slice());
+          renderFormula();
+          renderDynamic();
+        }
+      });
+    });
+
+    document.getElementById('k-slider').addEventListener('input', e => {
+      k = parseFloat(e.target.value);
+      renderK();
+    });
+    document.getElementById('btn-swap').addEventListener('click', swap);
+    document.getElementById('btn-s1').addEventListener('click', () => scaleR(0));
+    document.getElementById('btn-s2').addEventListener('click', () => scaleR(1));
+    document.getElementById('btn-a12').addEventListener('click', () => addR(0, 1));
+    document.getElementById('btn-a21').addEventListener('click', () => addR(1, 0));
+    document.getElementById('btn-reset').addEventListener('click', resetAll);
+    document.getElementById('btn-view').addEventListener('click', resetView);
+  }
+
+  // ── init ────────────────────────────────────────────────────────────────
+  function init() {
+    svgEl = document.getElementById('svg');
+    bgEl = document.getElementById('bg');
+    gridLayerEl = document.getElementById('grid-layer');
+    dynLayerEl = document.getElementById('dynamic-layer');
+    detValueEl = document.getElementById('det-value');
+    detFormulaEl = document.getElementById('det-formula');
+    kValueEl = document.getElementById('k-value');
+    infoCardEl = document.getElementById('info-card');
+    infoTitleEl = document.getElementById('info-title');
+    infoBodyEl = document.getElementById('info-body');
+    histEl = document.getElementById('history');
+
+    setupInputs();
+    setupPanZoom();
+
+    renderMatrixInputs();
+    renderFormula();
+    renderK();
+    renderInfo();
+    renderHist();
+    updateGridIfNeeded();
+    renderDynamic();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
