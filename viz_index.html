@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Visualizations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #07111e;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #e2e8f0;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  .container { max-width: 720px; margin: 0 auto; padding: 40px 24px; }
+  header { margin-bottom: 32px; }
+  h1 { font-size: 28px; font-weight: 700; color: #f8fafc; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .subtitle { color: #64748b; font-size: 14px; margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .card {
+    display: block;
+    background: #12203a;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, transform 0.15s, background 0.15s;
+  }
+  .card:hover { border-color: #1e3454; background: #15243f; transform: translateY(-1px); }
+  .card-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin: 0 0 6px; }
+  .card-desc { font-size: 13px; color: #94a3b8; margin: 0 0 10px; line-height: 1.55; }
+  .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #0a1628; color: #64748b; letter-spacing: 0.03em; }
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #1a2840; font-size: 12px; color: #475569; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Visualizations</h1>
+    <p class="subtitle">Interactive tools for building intuition.</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="determinant.html">
+      <h2 class="card-title">Determinant Visualization</h2>
+      <p class="card-desc">See how elementary row operations transform the area of the parallelogram spanned by a matrix's row vectors.</p>
+      <div class="card-tags">
+        <span class="tag">linear algebra</span>
+        <span class="tag">interactive</span>
+      </div>
+    </a>
+
+    <!--
+      Adding a new visualization?
+
+      Drop the file into this folder and copy the block above:
+
+      <a class="card" href="your-file.html">
+        <h2 class="card-title">Title</h2>
+        <p class="card-desc">One-line description.</p>
+        <div class="card-tags">
+          <span class="tag">topic</span>
+        </div>
+      </a>
+    -->
+  </div>
+
+  <footer>
+    More to come.
+  </footer>
+</div>
+</body>
+</html>
