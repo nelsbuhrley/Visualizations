@@ -70,6 +70,8 @@ Single-file, dependency-free webpage (vanilla HTML/CSS/JS, no build step, no lib
 - **Behavior:** `sandbox()` computes real numbers, updates readout cards + status badge, re-renders `#cv2`
 - **Same renderer:** Uses `drawScene()`
 - **Layout:** Sliders + readouts stacked in the left column, canvas (max-height 78vh) on the right, so the whole instrument fits one viewport
+- **Live geometry:** `sandbox()` builds an `s.geom` override (`Dx`, `Ls`, `Ld`, `NV`, `NSTRIP`, `wavePer`) from the sliders using monotone compressed mappings (powers/cbrt with clamps — not to scale, correct direction). Every slider moves its figure: z moves the detector plane and stretches L_s, E changes the drawn wavelength and L_s, P_D scales the detector pixels/L_D and shrinks L_s, N changes tick and strip-pixel counts and L_D. The walkthrough omits `geom` and gets the fixed default geometry.
+- **Label halos:** `label()` and `vbar()` stroke a paper-coloured halo behind text so rays passing underneath never make labels illegible.
 
 ### Visual style
 - **Aesthetic:** Graph-paper (CSS grid background)

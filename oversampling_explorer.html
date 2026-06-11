@@ -212,7 +212,7 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
       <b style="color:var(--orange)">p<sub>s</sub></b>. The object only spans
       <b style="color:var(--amber)">m</b> of those pixels.</p>
       <div class="eq">L<sub>s</sub> = <span class="am">N</span>·p<sub>s</sub> &nbsp;&nbsp;&nbsp; <span class="am">m</span> = a / p<sub>s</sub></div>
-      <p class="muted">The empty pixels around the object are the <em>no-density region</em>
+      <p>The empty pixels around the object are the <em>no-density region</em>
       (padding). They aren't wasted space — they're <strong>known zeros</strong>, the extra equations
       phase retrieval needs to pin down the unknown phases.</p>
     </section>
@@ -464,12 +464,16 @@ function vbar(ctx,x,y1,y2,color,a,label,side,labelDy){
   ctx.moveTo(x-5,y2); ctx.lineTo(x+5,y2);
   ctx.stroke();
   if(label){
-    ctx.fillStyle=alpha(color,a);
     ctx.font="500 13px 'IBM Plex Mono', monospace";
     ctx.textAlign = side==="left" ? "end" : "start";
     ctx.textBaseline="middle";
     const lx = side==="left" ? x-10 : x+10;
-    ctx.fillText(label, lx, (y1+y2)/2 + (labelDy||0));
+    const ly = (y1+y2)/2 + (labelDy||0);
+    ctx.strokeStyle=alpha(C.paper,0.85*Math.min(1,a));
+    ctx.lineWidth=4; ctx.lineJoin="round";
+    ctx.strokeText(label, lx, ly);
+    ctx.fillStyle=alpha(color,a);
+    ctx.fillText(label, lx, ly);
   }
 }
 
@@ -488,9 +492,13 @@ function arrow(ctx,x1,y1,x2,y2,color,a,w){
 
 function label(ctx,txt,x,y,color,a,align,size,weight){
   if(a<=0.01) return;
-  ctx.fillStyle=alpha(color,a);
   ctx.font=`${weight||400} ${size||13}px 'IBM Plex Mono', monospace`;
   ctx.textAlign=align||"center"; ctx.textBaseline="middle";
+  /* paper halo keeps text legible when rays pass underneath */
+  ctx.strokeStyle=alpha(C.paper,0.85*Math.min(1,a));
+  ctx.lineWidth=4; ctx.lineJoin="round";
+  ctx.strokeText(txt,x,y);
+  ctx.fillStyle=alpha(color,a);
   ctx.fillText(txt,x,y);
 }
 
@@ -515,17 +523,18 @@ function blob(ctx,xc,yc,h,a,fillA){
 /* sinc^2 fringe profile in the strip; spacing s in px */
 function sinc2(u){ if(Math.abs(u)<1e-9) return 1; const v=Math.PI*u; return Math.pow(Math.sin(v)/v,2); }
 
-function drawStrip(ctx,s){
+function drawStrip(ctx,s,g){
   const a=s.strip; if(a<=0.01) return;
+  const nstrip=(g&&g.NSTRIP!==undefined)?g.NSTRIP:NSTRIP;
   const w=stripX1-stripX0;
-  const pd=w/NSTRIP;
+  const pd=w/nstrip;
   const xc=(stripX0+stripX1)/2;
   const spacing=Math.max(0.55,s.os)*pd;     // fringe spacing in px = OS pixels
 
   /* frame + pixel ticks */
   ctx.strokeStyle=alpha(C.ink,0.55*a); ctx.lineWidth=1;
   ctx.strokeRect(stripX0,stripY,w,stripH);
-  for(let i=1;i<NSTRIP;i++){
+  for(let i=1;i<nstrip;i++){
     const x=stripX0+i*pd;
     ctx.strokeStyle=alpha(C.ink,0.13*a);
     ctx.beginPath(); ctx.moveTo(x,stripY); ctx.lineTo(x,stripY+stripH); ctx.stroke();
@@ -548,7 +557,7 @@ function drawStrip(ctx,s){
   /* samples at pixel centers (blue dots) */
   const da=s.dots*a; 
   const pts=[];
-  for(let i=0;i<NSTRIP;i++){
+  for(let i=0;i<nstrip;i++){
     const x=stripX0+(i+0.5)*pd, y=base-amp*I(x);
     pts.push([x,y]);
   }
@@ -618,21 +627,32 @@ function drawStrip(ctx,s){
 function drawScene(ctx,s){
   ctx.clearRect(0,0,W,H);
 
+  /* dynamic geometry: the sandbox passes s.geom, the walkthrough uses defaults */
+  const g=s.geom||{};
+  const dX=g.Dx!==undefined?g.Dx:Dx;
+  const ls=g.Ls!==undefined?g.Ls:Ls;
+  const ld=g.Ld!==undefined?g.Ld:Ld;
+  const nv=g.NV!==undefined?g.NV:NV;
+  const wp=g.wavePer!==undefined?g.wavePer:3.8;
+  const psV=ls/nv, pdV=ld/nv;
+  const sT=cy-ls/2, sB=cy+ls/2;
+  const dT=cy-ld/2, dB=cy+ld/2;
+
   /* ---- beam / z arrow ---- */
   if(s.beam>0.01){
-    arrow(ctx,Sx+14,72,Dx-14,72,C.ink,0.6*s.beam,1.3);
-    label(ctx,"z",(Sx+Dx)/2,56,C.ink,0.85*s.beam,"center",14,500);
+    arrow(ctx,Sx+14,72,dX-14,72,C.ink,0.6*s.beam,1.3);
+    label(ctx,"z",(Sx+dX)/2,56,C.ink,0.85*s.beam,"center",14,500);
     /* incoming wave of wavelength λ, kept left of the object annotations */
     ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.5;
     ctx.beginPath();
     for(let x=10;x<=58;x+=1){
-      const y=cy+11*Math.sin((x-10)/3.8);
+      const y=cy+11*Math.sin((x-10)/wp);
       x===10?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
     ctx.stroke();
     arrow(ctx,58,cy,70,cy,C.blue,0.8*s.beam,1.5);
     /* λ bracket spanning one period, crest to crest */
-    const lx1=10+3.8*Math.PI/2, lx2=lx1+3.8*2*Math.PI;
+    const lx1=10+wp*Math.PI/2, lx2=lx1+wp*2*Math.PI;
     ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.2;
     ctx.beginPath();
     ctx.moveTo(lx1,cy-18); ctx.lineTo(lx2,cy-18);
@@ -648,45 +668,45 @@ function drawScene(ctx,s){
   if(s.raysR>0.01){
     ctx.strokeStyle=alpha(C.red,0.8*s.raysR); ctx.lineWidth=1.5;
     ctx.beginPath();
-    ctx.moveTo(Sx,sTop); ctx.lineTo(Dx,cy);
-    ctx.moveTo(Sx,sBot); ctx.lineTo(Dx,cy+pdv);
+    ctx.moveTo(Sx,sT); ctx.lineTo(dX,cy);
+    ctx.moveTo(Sx,sB); ctx.lineTo(dX,cy+pdV);
     ctx.stroke();
-    label(ctx,"L_s ↔ P_D",540,193,C.red,0.9*s.raysR,"center",12.5,500);
+    label(ctx,"L_s ↔ P_D",Sx+0.7*(dX-Sx),sT+0.7*(cy-sT)-13,C.red,0.9*s.raysR,"center",12.5,500);
   }
   /* green: the two edges of the highlighted sample pixel -> detector window edges */
   if(s.raysG>0.01){
     ctx.strokeStyle=alpha(C.green,0.8*s.raysG); ctx.lineWidth=1.5;
     ctx.beginPath();
-    ctx.moveTo(Sx,cy-psv); ctx.lineTo(Dx,dTop);
-    ctx.moveTo(Sx,cy); ctx.lineTo(Dx,dBot);
+    ctx.moveTo(Sx,cy-psV); ctx.lineTo(dX,dT);
+    ctx.moveTo(Sx,cy); ctx.lineTo(dX,dB);
     ctx.stroke();
-    label(ctx,"p_s ↔ L_D",520,318,C.green,0.9*s.raysG,"center",12.5,500);
+    label(ctx,"p_s ↔ L_D",Sx+0.7*(dX-Sx),cy+0.7*(dB-cy)+15,C.green,0.9*s.raysG,"center",12.5,500);
   }
 
   /* ---- sample plane ---- */
   if(s.planes>0.01){
     ctx.strokeStyle=alpha(C.ink,s.planes); ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(Sx,sTop-16); ctx.lineTo(Sx,sBot+16); ctx.stroke();
-    label(ctx,"sample plane",Sx,sBot+38,C.ink,0.8*s.planes,"center",12.5);
+    ctx.beginPath(); ctx.moveTo(Sx,sT-16); ctx.lineTo(Sx,sB+16); ctx.stroke();
+    label(ctx,"sample plane",Sx,sB+38,C.ink,0.8*s.planes,"center",12.5);
   }
   /* sample ticks */
   if(s.sGrid>0.01){
     ctx.strokeStyle=alpha(C.ink,0.75*s.sGrid); ctx.lineWidth=1.2;
-    for(let i=0;i<=NV;i++){
-      const y=sTop+i*psv;
+    for(let i=0;i<=nv;i++){
+      const y=sT+i*psV;
       ctx.beginPath(); ctx.moveTo(Sx-5,y); ctx.lineTo(Sx+5,y); ctx.stroke();
     }
     /* highlight the pixel the green rays fan out from */
     ctx.fillStyle=alpha(C.orange,0.22*s.sGrid);
-    ctx.fillRect(Sx-5,cy-psv,10,psv);
-    label(ctx,"p_s",Sx-14,cy-psv/2,C.orange,s.sGrid,"end",12.5,500);
+    ctx.fillRect(Sx-5,cy-psV,10,psV);
+    label(ctx,"p_s",Sx-14,cy-psV/2,C.orange,s.sGrid,"end",12.5,500);
   }
 
   /* object blob + guides */
   if(s.obj>0.01){
     const h=s.objH;
     blob(ctx,Sx-92,cy,h,s.obj,s.obj);
-    vbar(ctx,Sx-138,cy-h/2,cy+h/2,C.orange,s.obj,"a","left");
+    vbar(ctx,Sx-138,cy-h/2,cy+h/2,C.orange,s.obj,"a","right");
     /* dashed guides onto the plane */
     ctx.strokeStyle=alpha(C.blue,0.55*s.obj); ctx.setLineDash([5,5]); ctx.lineWidth=1.2;
     ctx.beginPath();
@@ -699,35 +719,35 @@ function drawScene(ctx,s){
   if(s.sLabels>0.01){
     const h=s.objH;
     vbar(ctx,Sx+30,cy-h/2,cy+h/2,C.amber,s.sLabels,"m = a/p_s","right");
-    vbar(ctx,Sx+118,sTop,sBot,C.amber,0.85*s.sLabels,"N","right");
-    vbar(ctx,Sx-44,sTop,sBot,C.orange,0.9*s.sLabels,"L_s","left",-(Ls/2)-(-12));
+    vbar(ctx,Sx+118,sT,sB,C.amber,0.85*s.sLabels,"N","right");
+    vbar(ctx,Sx-44,sT,sB,C.orange,0.9*s.sLabels,"L_s","left",-(ls/2)+12);
     /* padding annotations */
     const padA=s.sLabels*Math.min(1,Math.max(0,(s.osGeom-1.15)/0.6));
-    label(ctx,"padding",Sx+66,(sTop+cy-h/2)/2,C.soft,0.8*padA,"center",11.5);
-    label(ctx,"(zeros)",Sx+66,(sTop+cy-h/2)/2+14,C.soft,0.6*padA,"center",11.5);
+    label(ctx,"padding",Sx+66,(sT+cy-h/2)/2,C.soft,0.8*padA,"center",11.5);
+    label(ctx,"(zeros)",Sx+66,(sT+cy-h/2)/2+14,C.soft,0.6*padA,"center",11.5);
   }
 
   /* ---- detector plane ---- */
   if(s.planes>0.01){
     ctx.strokeStyle=alpha(C.ink,s.planes); ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(Dx,dTop-16); ctx.lineTo(Dx,dBot+16); ctx.stroke();
-    label(ctx,"detector plane",Dx,dBot+38,C.ink,0.8*s.planes,"center",12.5);
+    ctx.beginPath(); ctx.moveTo(dX,dT-16); ctx.lineTo(dX,dB+16); ctx.stroke();
+    label(ctx,"detector plane",dX,dB+38,C.ink,0.8*s.planes,"center",12.5);
   }
   if(s.dGrid>0.01){
     ctx.strokeStyle=alpha(C.ink,0.75*s.dGrid); ctx.lineWidth=1.2;
-    for(let i=0;i<=NV;i++){
-      const y=dTop+i*pdv;
-      ctx.beginPath(); ctx.moveTo(Dx-5,y); ctx.lineTo(Dx+5,y); ctx.stroke();
+    for(let i=0;i<=nv;i++){
+      const y=dT+i*pdV;
+      ctx.beginPath(); ctx.moveTo(dX-5,y); ctx.lineTo(dX+5,y); ctx.stroke();
     }
     /* highlight the pixel the red rays converge on */
     ctx.fillStyle=alpha(C.orange,0.22*s.dGrid);
-    ctx.fillRect(Dx-5,cy,10,pdv);
-    label(ctx,"P_D",Dx+14,cy+pdv/2,C.orange,s.dGrid,"start",12.5,500);
-    vbar(ctx,Dx+52,dTop,dBot,C.orange,0.9*s.dGrid,"L_D","right");
-    vbar(ctx,Dx-34,dTop,dBot,C.amber,0.85*s.dGrid,"N","left");
+    ctx.fillRect(dX-5,cy,10,pdV);
+    label(ctx,"P_D",dX+14,cy+pdV/2,C.orange,s.dGrid,"start",12.5,500);
+    vbar(ctx,dX+52,dT,dB,C.orange,0.9*s.dGrid,"L_D","right");
+    vbar(ctx,dX-34,dT,dB,C.amber,0.85*s.dGrid,"N","left");
   }
 
-  drawStrip(ctx,s);
+  drawStrip(ctx,s,g);
 }
 
 /* ================= walkthrough state machine ================= */
@@ -820,10 +840,21 @@ function sandbox(){
   else{st.textContent="oversampled ✓";st.className="val ok";}
 
   const osV=Math.max(0.6,Math.min(8,OS));
+  /* visual geometry: monotone compressed mappings (not to scale, correct direction
+     and proportion) so every slider visibly moves its part of the figure */
+  const Nr=N/256, Pr=Pd/55e-6, zr=z/0.5, lr=lam/1.3776e-10;
+  const geom={
+    Dx:Math.min(700,Math.round(380+340*Math.cbrt(z/3))),
+    Ls:Math.min(330,Math.max(110,232*Math.pow(zr*lr/Pr,0.4))),
+    Ld:Math.min(340,Math.max(140,296*Math.pow(Nr*Pr,0.4))),
+    NV:Math.max(4,Math.round(12*Math.pow(Nr,0.4))),
+    NSTRIP:Math.max(8,Math.round(22*Math.pow(Nr,0.4))),
+    wavePer:Math.min(5.9,Math.max(2.4,3.8*Math.pow(9/E,0.8)))
+  };
   drawScene(ctx2,{
     planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.85,raysR:.7,raysG:.7,
     strip:1,dots:1,alias:1,fringeLbl:.4,osChip:1,
-    os:osV,osGeom:osV,objH:objHFor(osV)
+    os:osV,osGeom:osV,objH:geom.Ls/Math.max(1.04,osV),geom
   });
 }
 [sE,sA,sP,sN,sZ].forEach(el=>el.addEventListener("input",sandbox));
