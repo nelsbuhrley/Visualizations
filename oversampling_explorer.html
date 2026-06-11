@@ -88,29 +88,29 @@ sub{font-size:.72em}
 .tag.amber{color:var(--amber);border-color:var(--amber)}
 
 /* ---------- sandbox ---------- */
-.sandbox{border-top:1px solid var(--rule);padding:9vh 6vw}
-.sandbox header{max-width:760px;margin-bottom:3rem}
+.sandbox{border-top:1px solid var(--rule);padding:6vh 6vw}
+.sandbox header{max-width:760px;margin-bottom:1.6rem}
 .sandbox header .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--orange);margin-bottom:1rem}
 .sandbox h2{font-family:var(--display);font-weight:600;font-size:2.1rem;margin-bottom:.8rem}
 .sandbox header p{color:var(--ink-soft);max-width:56ch}
-.sb-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:2.4rem;align-items:start}
-.controls{display:flex;flex-direction:column;gap:1.25rem}
+.sb-grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:1.6rem;align-items:start}
+.controls{display:flex;flex-direction:column;gap:.95rem}
 .ctl label{display:flex;justify-content:space-between;align-items:baseline;
   font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-bottom:.35rem}
 .ctl label output{color:var(--ink);font-weight:500;font-size:14px}
 .ctl input[type=range]{width:100%;accent-color:var(--orange);height:22px;cursor:pointer}
-.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:10px;margin-bottom:1.4rem}
-.ro{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:.8rem .95rem}
+.readouts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.4rem}
+.ro{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:.55rem .75rem}
+.ro.status{grid-column:1/-1}
 .ro .lbl{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);
   letter-spacing:.05em;margin-bottom:.2rem}
-.ro .val{font-family:var(--mono);font-size:1.25rem;font-weight:500}
+.ro .val{font-family:var(--mono);font-size:1.1rem;font-weight:500}
 .ro.status .val{font-size:1rem;padding-top:.2rem}
 #sbStatus.ok{color:var(--green)} #sbStatus.warn{color:var(--amber)} #sbStatus.bad{color:var(--red)}
 .sb-canvas-wrap{background:var(--paper);border:1px solid var(--rule);border-radius:12px;
   padding:6px}
-.sb-canvas-wrap canvas{width:100%;height:auto;display:block}
+.sb-canvas-wrap canvas{width:auto;max-width:100%;max-height:78vh;height:auto;display:block;margin:0 auto}
 .note{font-size:.9rem;color:var(--ink-soft);margin-top:1rem;max-width:64ch}
 
 /* ---------- reference ---------- */
@@ -188,13 +188,19 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
       <p class="layer">Layer 01 · the stage</p>
       <h2>Two planes, one transform</h2>
       <p>A coherent plane wave <span style="font-family:var(--mono)">ψ(r) = A·e<sup>ikr</sup></span>
-      illuminates an object of size <b style="color:var(--orange)">a</b>. The wave that
+      of wavelength <b style="color:var(--blue)">λ</b> illuminates an object of size
+      <b style="color:var(--orange)">a</b>. The wave that
       leaves the object — the <em>exit wave</em> — carries the object's absorption in its
-      amplitude and its refractive delay in its phase.</p>
+      amplitude and its refractive delay in its phase. For a crystalline object that
+      absorption profile is not featureless: it carries information about the object's
+      lattice spacing along this dimension.</p>
       <div class="eq">ψ<sub>ESW</sub>(r) = A(r)·e<sup>iφ₀(r)</sup></div>
       <p>After travelling a distance <b style="color:var(--ink)">z</b>, the far-field
       pattern landing on the detector is the <strong>Fourier transform</strong> of that
-      exit wave. Everything on this page follows from that single fact.</p>
+      exit wave. Everything on this page follows from that single fact. In the simplest
+      terms, BCDI runs the trip in reverse: measure the far-field exit wave and apply
+      the <strong>inverse Fourier transform</strong> to reconstruct the original
+      object.</p>
     </section>
 
     <section class="step" data-step="1">
@@ -207,7 +213,7 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
       <b style="color:var(--amber)">m</b> of those pixels.</p>
       <div class="eq">L<sub>s</sub> = <span class="am">N</span>·p<sub>s</sub> &nbsp;&nbsp;&nbsp; <span class="am">m</span> = a / p<sub>s</sub></div>
       <p class="muted">The empty pixels around the object are the <em>no-density region</em>
-      (padding). They aren't wasted space — they're known zeros, the extra equations
+      (padding). They aren't wasted space — they're <strong>known zeros</strong>, the extra equations
       phase retrieval needs to pin down the unknown phases.</p>
     </section>
 
@@ -226,7 +232,7 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
     <section class="step" data-step="3">
       <p class="layer">Layer 04 · reciprocity</p>
       <h2>The crossing rays</h2>
-      <p>This is the heart of your sketch. The Fourier transform pairs lengths
+      <p>This is the heart of the whole geometry. The Fourier transform pairs lengths
       <em>inversely</em>: the <span style="color:var(--green);font-weight:500">smallest</span>
       feature on one plane sets the <span style="color:var(--green);font-weight:500">largest</span>
       extent on the other, and vice versa.</p>
@@ -240,8 +246,10 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
     <section class="step" data-step="4">
       <p class="layer">Layer 05 · the signal</p>
       <h2>An object of size a makes fringes</h2>
-      <p>Slice through the diffraction pattern and you find oscillations — speckle
-      fringes — whose characteristic spacing is set by the object size:</p>
+      <p>A new panel has appeared below the planes: a horizontal slice through the
+      intensity landing on the detector. It isn't smooth — it oscillates. These
+      oscillations are speckle fringes, and their characteristic spacing is set by
+      the object size:</p>
       <div class="eq">fringe spacing = zλ / a &nbsp;&nbsp;⇒&nbsp;&nbsp; f₀ = a / zλ</div>
       <p class="muted">Bigger object → finer fringes. The object size <b>a</b> is the
       highest spatial frequency the intensity pattern contains. That frequency,
@@ -251,10 +259,14 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
     <section class="step" data-step="5">
       <p class="layer">Layer 06 · the samples</p>
       <h2>The detector samples those fringes</h2>
-      <p>Each pixel reads the pattern once per pitch
+      <p>The red curve is the continuous pattern physics delivers — but the detector
+      never sees it continuously. Each pixel integrates the light falling on it and
+      reports one number, a single reading per pitch
       <b style="color:var(--orange)">P<sub>D</sub></b>, so the detector samples at</p>
       <div class="eq">f<sub>sampling</sub> = 1 / P<sub>D</sub></div>
-      <p>Nyquist's rule: to capture an oscillation faithfully you need
+      <p>Each <b style="color:var(--blue)">blue dot</b> in the strip is one of those
+      readings: the intensity at one pixel's centre, lifted off the red curve.
+      Nyquist's rule: to capture an oscillation faithfully you need
       <strong>at least two samples per fringe</strong>. Right now each fringe spans
       several pixels — the blue dots trace the red curve honestly.</p>
     </section>
@@ -263,8 +275,9 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
       <p class="layer">Layer 07 · the failure mode</p>
       <h2>Aliasing — when the fringes outrun the pixels</h2>
       <p><span class="tag red">OS &lt; 2</span> Move the detector too close (or image too
-      large an object) and the fringes squeeze tighter than two pixels. The samples
-      still land on the true curve, but the curve they <em>imply</em> — dashed blue — is
+      large an object) and the fringes squeeze tighter than two pixels. The blue dots —
+      the pixels' readings — still land on the true curve, but the curve they
+      <em>imply</em> — dashed blue — is
       a slower, fake oscillation. Entire fringes vanish.</p>
       <p class="muted">Notice the sample plane on the left: the object now nearly fills
       the window. Insufficient sampling in detector space <em>is</em> insufficient
@@ -284,19 +297,36 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
     <section class="step" data-step="8">
       <p class="layer">Layer 09 · the trade-off</p>
       <h2>Resolution pulls the other way</h2>
-      <p>The reconstruction's pixel size — your resolution — is set by the full
-      detector width:</p>
+      <p>The reconstruction's pixel size — your resolution — comes from the
+      <span style="color:var(--green);font-weight:500">green pair</span>, now front
+      and centre on the left: one real-space pixel is tied to the <em>full</em>
+      detector width,</p>
       <div class="eq"><span class="g">p<sub>s</sub></span> = zλ / (N·P<sub>D</sub>)</div>
-      <p>Increasing <b>z</b> raises OS (good) but coarsens p<sub>s</sub> (bad). And at
-      the threshold OS = 2 exactly, z, λ and P<sub>D</sub> all cancel:</p>
-      <div class="eq">p<sub>s</sub>│<sub>OS=2</sub> = 2a / N</div>
-      <p class="muted">The best resolution compatible with the sampling condition is
-      fixed by your pixel count alone. More resolution requires more pixels — distance
-      can't buy it.</p>
+      <p>Here is the tension. Pulling the detector back (increasing <b>z</b>) widens
+      the fringes, so OS rises — good for sampling. But the same move coarsens
+      p<sub>s</sub> — bad for resolution. Moving closer sharpens the picture right up
+      until the fringes outrun the pixels. Both requirements pull on the same lever.</p>
+      <p class="muted">So how good can the resolution get before sampling gives out?</p>
     </section>
 
     <section class="step" data-step="9">
-      <p class="layer">Layer 10 · BCDI numbers</p>
+      <p class="layer">Layer 10 · the ceiling</p>
+      <h2>The best resolution sampling allows</h2>
+      <p>Push to the legal limit: OS = 2 exactly. The oversampling condition
+      OS = zλ/(a·P<sub>D</sub>) = 2 pins down the combination
+      zλ/P<sub>D</sub> = 2a. Substitute that into the resolution formula and watch
+      z, λ and P<sub>D</sub> all cancel:</p>
+      <div class="eq">p<sub>s</sub>│<sub>OS=2</sub> = zλ / (N·P<sub>D</sub>) = 2a / N</div>
+      <p>At the sampling threshold the best resolution is fixed by the pixel count
+      <span style="color:var(--amber);font-weight:500">N</span> alone. More resolution
+      requires more pixels — distance can't buy it.</p>
+      <p class="muted">This is why detector format matters as much as anything else on
+      the beamline: N is the only lever that improves resolution without spending
+      oversampling.</p>
+    </section>
+
+    <section class="step" data-step="10">
+      <p class="layer">Layer 11 · BCDI numbers</p>
       <h2>A gold grain at a synchrotron</h2>
       <p>Typical Bragg CDI setup: <b>9 keV</b> photons (λ = 1.378 Å), a
       <b>300 nm</b> Au nanocrystal, a photon-counting detector with
@@ -342,11 +372,6 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
         <label for="sZ">distance z <output id="oZ">0.50 m</output></label>
         <input type="range" id="sZ" min="0.05" max="3" step="0.01" value="0.5">
       </div>
-      <p class="note">Drag z below ~0.24 m with the defaults and watch the aliased
-      curve appear — and the padding on the sample plane collapse with it.</p>
-    </div>
-
-    <div>
       <div class="readouts">
         <div class="ro"><div class="lbl">oversampling OS = zλ/(a·P_D)</div><div class="val" id="rOS">4.18</div></div>
         <div class="ro"><div class="lbl">resolution p_s = zλ/(N·P_D)</div><div class="val" id="rPS">4.89 nm</div></div>
@@ -354,6 +379,11 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
         <div class="ro"><div class="lbl">detector width L_D = N·P_D</div><div class="val" id="rLD">14.1 mm</div></div>
         <div class="ro status"><div class="lbl">sampling status</div><div class="val" id="sbStatus">—</div></div>
       </div>
+      <p class="note">Drag z below ~0.24 m with the defaults and watch the aliased
+      curve appear — and the padding on the sample plane collapse with it.</p>
+    </div>
+
+    <div>
       <div class="sb-canvas-wrap gridbg">
         <canvas id="cv2" width="840" height="640" role="img"
           aria-label="Live diagram driven by the sliders: sample and detector planes with crossing rays, and a fringe profile showing whether the detector pixels sample the fringes faithfully or alias them."></canvas>
@@ -379,16 +409,11 @@ footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(
       object. Aim for 3–4 in practice — algorithms are happier away from the edge.</p>
     </div>
     <div class="refcard">
-      <h3>Resolution ceiling</h3>
-      <div class="eq">p<sub>s</sub>│<sub>OS=2</sub> = 2a / N</div>
-      <p>At the threshold, distance, wavelength and pixel pitch all cancel. Pixel
-      count is the only lever on resolution that doesn't cost you sampling.</p>
-    </div>
-    <div class="refcard">
-      <h3>BCDI defaults used here</h3>
-      <div class="eq">E = 9 keV → λ = 1.378 Å<br>a = 300 nm · P<sub>D</sub> = 55 µm · N = 256</div>
-      <p>λ[Å] = 12.398 / E[keV]. A 55 µm pitch matches common photon-counting
-      detectors (Medipix/Timepix family) at coherent-imaging beamlines.</p>
+      <h3>Resolution</h3>
+      <div class="eq">p<sub>s</sub> = zλ / (N·P<sub>D</sub>)</div>
+      <p>Set by the full detector width. At the OS = 2 threshold it reduces to
+      2a/N — pixel count is the only lever on resolution that doesn't cost you
+      sampling.</p>
     </div>
   </div>
 </section>
@@ -553,6 +578,8 @@ function drawStrip(ctx,s){
       ctx.strokeStyle=alpha(C.blue,0.35*da);
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,base+6); ctx.stroke();
     }
+    label(ctx,"what the pixels record",stripX1-8,stripY+18,C.blue,
+      da*Math.max(0,1-showAlias*1.6),"end",12);
   }
 
   /* fringe-spacing bracket on the true curve */
@@ -594,36 +621,46 @@ function drawScene(ctx,s){
   /* ---- beam / z arrow ---- */
   if(s.beam>0.01){
     arrow(ctx,Sx+14,72,Dx-14,72,C.ink,0.6*s.beam,1.3);
-    label(ctx,"z  ·  λ",(Sx+Dx)/2,56,C.ink,0.85*s.beam,"center",14,500);
-    /* incoming wave */
+    label(ctx,"z",(Sx+Dx)/2,56,C.ink,0.85*s.beam,"center",14,500);
+    /* incoming wave of wavelength λ, kept left of the object annotations */
     ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.5;
     ctx.beginPath();
-    for(let x=30;x<=128;x+=2){
-      const y=cy+13*Math.sin((x-30)/9.5);
-      x===30?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    for(let x=10;x<=58;x+=1){
+      const y=cy+11*Math.sin((x-10)/3.8);
+      x===10?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
     ctx.stroke();
-    arrow(ctx,128,cy,150,cy,C.blue,0.8*s.beam,1.5);
-    label(ctx,"ψ = A·e^{ikr}",78,cy-30,C.blue,0.85*s.beam,"center",12.5);
+    arrow(ctx,58,cy,70,cy,C.blue,0.8*s.beam,1.5);
+    /* λ bracket spanning one period, crest to crest */
+    const lx1=10+3.8*Math.PI/2, lx2=lx1+3.8*2*Math.PI;
+    ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(lx1,cy-18); ctx.lineTo(lx2,cy-18);
+    ctx.moveTo(lx1,cy-14); ctx.lineTo(lx1,cy-22);
+    ctx.moveTo(lx2,cy-14); ctx.lineTo(lx2,cy-22);
+    ctx.stroke();
+    label(ctx,"λ",(lx1+lx2)/2,cy-31,C.blue,0.9*s.beam,"center",13,500);
+    label(ctx,"ψ = A·e^{ikr}",52,cy+55,C.blue,0.85*s.beam,"center",12.5);
   }
 
   /* ---- crossing rays (under planes) ---- */
-  if(s.rays>0.01){
-    const og=s.objH/2;
-    /* red: full sample window -> one detector pixel */
-    ctx.strokeStyle=alpha(C.red,0.8*s.rays); ctx.lineWidth=1.5;
+  /* red: window edges -> the two edges of the highlighted detector pixel */
+  if(s.raysR>0.01){
+    ctx.strokeStyle=alpha(C.red,0.8*s.raysR); ctx.lineWidth=1.5;
     ctx.beginPath();
-    ctx.moveTo(Sx,sTop); ctx.lineTo(Dx,cy+pdv/2);
-    ctx.moveTo(Sx,sBot); ctx.lineTo(Dx,cy-pdv/2);
+    ctx.moveTo(Sx,sTop); ctx.lineTo(Dx,cy);
+    ctx.moveTo(Sx,sBot); ctx.lineTo(Dx,cy+pdv);
     ctx.stroke();
-    /* green: one sample pixel -> full detector */
-    ctx.strokeStyle=alpha(C.green,0.8*s.rays); ctx.lineWidth=1.5;
+    label(ctx,"L_s ↔ P_D",540,193,C.red,0.9*s.raysR,"center",12.5,500);
+  }
+  /* green: the two edges of the highlighted sample pixel -> detector window edges */
+  if(s.raysG>0.01){
+    ctx.strokeStyle=alpha(C.green,0.8*s.raysG); ctx.lineWidth=1.5;
     ctx.beginPath();
-    ctx.moveTo(Sx,cy-psv/2); ctx.lineTo(Dx,dBot);
-    ctx.moveTo(Sx,cy+psv/2); ctx.lineTo(Dx,dTop);
+    ctx.moveTo(Sx,cy-psv); ctx.lineTo(Dx,dTop);
+    ctx.moveTo(Sx,cy); ctx.lineTo(Dx,dBot);
     ctx.stroke();
-    label(ctx,"L_s ↔ P_D",(Sx+Dx)/2,cy-86,C.red,0.9*s.rays,"center",12.5,500);
-    label(ctx,"p_s ↔ L_D",(Sx+Dx)/2,cy+92,C.green,0.9*s.rays,"center",12.5,500);
+    label(ctx,"p_s ↔ L_D",520,318,C.green,0.9*s.raysG,"center",12.5,500);
   }
 
   /* ---- sample plane ---- */
@@ -639,10 +676,10 @@ function drawScene(ctx,s){
       const y=sTop+i*psv;
       ctx.beginPath(); ctx.moveTo(Sx-5,y); ctx.lineTo(Sx+5,y); ctx.stroke();
     }
-    /* highlight one pixel */
+    /* highlight the pixel the green rays fan out from */
     ctx.fillStyle=alpha(C.orange,0.22*s.sGrid);
-    ctx.fillRect(Sx-5,sTop,10,psv);
-    label(ctx,"p_s",Sx-14,sTop+psv/2,C.orange,s.sGrid,"end",12.5,500);
+    ctx.fillRect(Sx-5,cy-psv,10,psv);
+    label(ctx,"p_s",Sx-14,cy-psv/2,C.orange,s.sGrid,"end",12.5,500);
   }
 
   /* object blob + guides */
@@ -682,9 +719,10 @@ function drawScene(ctx,s){
       const y=dTop+i*pdv;
       ctx.beginPath(); ctx.moveTo(Dx-5,y); ctx.lineTo(Dx+5,y); ctx.stroke();
     }
+    /* highlight the pixel the red rays converge on */
     ctx.fillStyle=alpha(C.orange,0.22*s.dGrid);
-    ctx.fillRect(Dx-5,dTop,10,pdv);
-    label(ctx,"P_D",Dx+14,dTop+pdv/2,C.orange,s.dGrid,"start",12.5,500);
+    ctx.fillRect(Dx-5,cy,10,pdv);
+    label(ctx,"P_D",Dx+14,cy+pdv/2,C.orange,s.dGrid,"start",12.5,500);
     vbar(ctx,Dx+52,dTop,dBot,C.orange,0.9*s.dGrid,"L_D","right");
     vbar(ctx,Dx-34,dTop,dBot,C.amber,0.85*s.dGrid,"N","left");
   }
@@ -696,16 +734,17 @@ function drawScene(ctx,s){
 const objHFor = osGeom => Ls/Math.max(1.04,osGeom);
 
 const STEPS=[
-  /* 0 two planes   */ {planes:1,beam:1,obj:1,sGrid:0,dGrid:0,sLabels:0,rays:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
-  /* 1 sample grid  */ {planes:1,beam:.35,obj:1,sGrid:1,dGrid:0,sLabels:1,rays:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
-  /* 2 det grid     */ {planes:1,beam:.25,obj:1,sGrid:1,dGrid:1,sLabels:.55,rays:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
-  /* 3 rays         */ {planes:1,beam:.15,obj:.85,sGrid:1,dGrid:1,sLabels:.3,rays:1,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
-  /* 4 fringes      */ {planes:1,beam:.15,obj:.85,sGrid:.7,dGrid:.7,sLabels:.2,rays:.35,strip:1,dots:0,alias:0,fringeLbl:1,osChip:0,os:4,osGeom:3},
-  /* 5 sampling     */ {planes:1,beam:.15,obj:.85,sGrid:.6,dGrid:.85,sLabels:.2,rays:.25,strip:1,dots:1,alias:0,fringeLbl:.5,osChip:1,os:4,osGeom:3},
-  /* 6 aliasing     */ {planes:1,beam:.1,obj:1,sGrid:.8,dGrid:.85,sLabels:.75,rays:.2,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:1.3,osGeom:1.3},
-  /* 7 condition    */ {planes:1,beam:.1,obj:1,sGrid:.9,dGrid:.9,sLabels:1,rays:.5,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:2.5,osGeom:2.5},
-  /* 8 resolution   */ {planes:1,beam:.3,obj:.85,sGrid:1,dGrid:1,sLabels:.5,rays:1,strip:1,dots:1,alias:0,fringeLbl:0,osChip:1,os:3,osGeom:3},
-  /* 9 bcdi         */ {planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.7,rays:.6,strip:1,dots:1,alias:0,fringeLbl:.4,osChip:1,os:4.2,osGeom:4.2},
+  /* 0 two planes   */ {planes:1,beam:1,obj:1,sGrid:0,dGrid:0,sLabels:0,raysR:0,raysG:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 1 sample grid  */ {planes:1,beam:.35,obj:1,sGrid:1,dGrid:0,sLabels:1,raysR:0,raysG:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 2 det grid     */ {planes:1,beam:.25,obj:1,sGrid:1,dGrid:1,sLabels:.55,raysR:0,raysG:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 3 rays         */ {planes:1,beam:.15,obj:.85,sGrid:1,dGrid:1,sLabels:.3,raysR:1,raysG:1,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 4 fringes      */ {planes:1,beam:.15,obj:.85,sGrid:.7,dGrid:.7,sLabels:.2,raysR:.5,raysG:.1,strip:1,dots:0,alias:0,fringeLbl:1,osChip:0,os:4,osGeom:3},
+  /* 5 sampling     */ {planes:1,beam:.15,obj:.85,sGrid:.6,dGrid:.85,sLabels:.2,raysR:.4,raysG:.08,strip:1,dots:1,alias:0,fringeLbl:.5,osChip:1,os:4,osGeom:3},
+  /* 6 aliasing     */ {planes:1,beam:.1,obj:1,sGrid:.8,dGrid:.85,sLabels:.75,raysR:.3,raysG:.06,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:1.3,osGeom:1.3},
+  /* 7 condition    */ {planes:1,beam:.1,obj:1,sGrid:.9,dGrid:.9,sLabels:1,raysR:.6,raysG:.15,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:2.5,osGeom:2.5},
+  /* 8 resolution   */ {planes:1,beam:.3,obj:.85,sGrid:1,dGrid:1,sLabels:.5,raysR:.12,raysG:1,strip:1,dots:1,alias:0,fringeLbl:0,osChip:1,os:3,osGeom:3},
+  /* 9 ceiling      */ {planes:1,beam:.2,obj:1,sGrid:1,dGrid:1,sLabels:.8,raysR:.12,raysG:.9,strip:1,dots:1,alias:0,fringeLbl:0,osChip:1,os:2,osGeom:2},
+  /* 10 bcdi        */ {planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.7,raysR:.6,raysG:.6,strip:1,dots:1,alias:0,fringeLbl:.4,osChip:1,os:4.2,osGeom:4.2},
 ];
 
 const cv=document.getElementById("cv");
@@ -782,7 +821,7 @@ function sandbox(){
 
   const osV=Math.max(0.6,Math.min(8,OS));
   drawScene(ctx2,{
-    planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.85,rays:.7,
+    planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.85,raysR:.7,raysG:.7,
     strip:1,dots:1,alias:1,fringeLbl:.4,osChip:1,
     os:osV,osGeom:osV,objH:objHFor(osV)
   });
