@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oversampling, drawn out — the geometry of coherent diffraction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBF9F1;
+  --grid:#E2E6EC;
+  --ink:#22262C;
+  --ink-soft:#5B6068;
+  --orange:#D9731F;
+  --amber:#B8860B;
+  --green:#1E7D43;
+  --red:#C0392B;
+  --blue:#2B6CB0;
+  --card:#FFFFFF;
+  --rule:#D8D4C8;
+  --display:'Space Grotesk',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  font-size:16px;line-height:1.65;
+}
+.gridbg{
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:26px 26px;
+}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+
+/* ---------- hero ---------- */
+.hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;
+  padding:8vh 6vw 6vh;position:relative;overflow:hidden}
+.hero .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--orange);margin-bottom:1.2rem}
+.hero h1{font-family:var(--display);font-weight:600;font-size:clamp(2.4rem,6vw,4.6rem);
+  line-height:1.04;max-width:13ch}
+.hero h1 .lt{color:var(--ink-soft);font-weight:500}
+.hero p.sub{max-width:54ch;margin-top:1.4rem;font-size:1.06rem;color:var(--ink-soft)}
+.hero .beam{margin-top:2.6rem;height:64px;position:relative;max-width:760px}
+.hero .beam svg{width:100%;height:100%;overflow:visible}
+.scrollhint{position:absolute;bottom:2.2rem;left:6vw;font-family:var(--mono);
+  font-size:12px;color:var(--ink-soft);letter-spacing:.1em}
+.scrollhint::after{content:'↓';display:inline-block;margin-left:.5em;
+  animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){.scrollhint::after{animation:none}}
+
+/* ---------- scrolly layout ---------- */
+.scrolly{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);
+  gap:0;align-items:start;border-top:1px solid var(--rule)}
+.graphic{position:sticky;top:0;height:100vh;display:flex;align-items:center;
+  justify-content:center;padding:2vh 1.5vw;border-right:1px solid var(--rule)}
+.graphic canvas{width:100%;height:auto;max-height:92vh;display:block}
+.steps{padding:0 5vw 0 4vw}
+.step{min-height:92vh;display:flex;flex-direction:column;justify-content:center;
+  padding:10vh 0}
+.step .layer{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--orange);margin-bottom:.9rem}
+.step h2{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;
+  margin-bottom:1rem;max-width:24ch}
+.step p{color:var(--ink);max-width:52ch;margin-bottom:1rem}
+.step p.muted{color:var(--ink-soft);font-size:.94rem}
+.eq{font-family:var(--mono);background:var(--card);border:1px solid var(--rule);
+  border-left:3px solid var(--orange);border-radius:0 8px 8px 0;
+  padding:.8rem 1.1rem;margin:1.1rem 0;font-size:.98rem;line-height:1.9;
+  overflow-x:auto;white-space:nowrap}
+.eq b{font-weight:500;color:var(--orange)}
+.eq .g{color:var(--green)} .eq .r{color:var(--red)} .eq .bl{color:var(--blue)}
+.eq .am{color:var(--amber)}
+sub{font-size:.72em}
+.tag{display:inline-block;font-family:var(--mono);font-size:12px;
+  padding:2px 10px;border-radius:99px;border:1px solid;margin-right:.4rem}
+.tag.red{color:var(--red);border-color:var(--red)}
+.tag.green{color:var(--green);border-color:var(--green)}
+.tag.amber{color:var(--amber);border-color:var(--amber)}
+
+/* ---------- sandbox ---------- */
+.sandbox{border-top:1px solid var(--rule);padding:9vh 6vw}
+.sandbox header{max-width:760px;margin-bottom:3rem}
+.sandbox header .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--orange);margin-bottom:1rem}
+.sandbox h2{font-family:var(--display);font-weight:600;font-size:2.1rem;margin-bottom:.8rem}
+.sandbox header p{color:var(--ink-soft);max-width:56ch}
+.sb-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:2.4rem;align-items:start}
+.controls{display:flex;flex-direction:column;gap:1.25rem}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-bottom:.35rem}
+.ctl label output{color:var(--ink);font-weight:500;font-size:14px}
+.ctl input[type=range]{width:100%;accent-color:var(--orange);height:22px;cursor:pointer}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;margin-bottom:1.4rem}
+.ro{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:.8rem .95rem}
+.ro .lbl{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);
+  letter-spacing:.05em;margin-bottom:.2rem}
+.ro .val{font-family:var(--mono);font-size:1.25rem;font-weight:500}
+.ro.status .val{font-size:1rem;padding-top:.2rem}
+#sbStatus.ok{color:var(--green)} #sbStatus.warn{color:var(--amber)} #sbStatus.bad{color:var(--red)}
+.sb-canvas-wrap{background:var(--paper);border:1px solid var(--rule);border-radius:12px;
+  padding:6px}
+.sb-canvas-wrap canvas{width:100%;height:auto;display:block}
+.note{font-size:.9rem;color:var(--ink-soft);margin-top:1rem;max-width:64ch}
+
+/* ---------- reference ---------- */
+.reference{border-top:1px solid var(--rule);padding:8vh 6vw 6vh}
+.reference h2{font-family:var(--display);font-weight:600;font-size:1.8rem;margin-bottom:2rem}
+.refcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.refcard{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+  padding:1.1rem 1.25rem}
+.refcard h3{font-family:var(--display);font-size:1.02rem;font-weight:600;margin-bottom:.5rem}
+.refcard .eq{margin:.6rem 0;border-left-color:var(--blue)}
+.refcard p{font-size:.9rem;color:var(--ink-soft)}
+footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);
+  border-top:1px solid var(--rule)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .scrolly{grid-template-columns:1fr}
+  .graphic{position:sticky;top:0;height:46vh;border-right:none;
+    border-bottom:1px solid var(--rule);background:var(--paper);z-index:5;
+    padding:1vh 2vw}
+  .graphic canvas{max-height:44vh}
+  .step{min-height:74vh;padding:6vh 0}
+  .steps{padding:0 6vw}
+  .sb-grid{grid-template-columns:1fr}
+  .hero h1{font-size:clamp(2rem,9vw,3rem)}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero gridbg">
+  <p class="eyebrow">Coherent diffractive imaging · sampling geometry</p>
+  <h1>Oversampling,<br><span class="lt">drawn out.</span></h1>
+  <p class="sub">A sample plane, a detector plane, and one Fourier transform between
+  them. Scroll to build the picture one layer at a time — pixels, reciprocal lengths,
+  diffraction fringes, and the moment everything aliases — then take the controls
+  with real BCDI numbers.</p>
+  <div class="beam" aria-hidden="true">
+    <svg viewBox="0 0 760 64">
+      <line x1="0" y1="32" x2="760" y2="32" stroke="#D9731F" stroke-width="1.5"
+        stroke-dasharray="760" stroke-dashoffset="760">
+        <animate attributeName="stroke-dashoffset" from="760" to="0" dur="1.6s" fill="freeze"/>
+      </line>
+      <path d="M40 32 q10 -14 20 0 q10 14 20 0 q10 -14 20 0 q10 14 20 0" fill="none"
+        stroke="#2B6CB0" stroke-width="1.5" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="1.2s" dur="0.6s" fill="freeze"/>
+      </path>
+      <rect x="372" y="10" width="8" height="44" rx="2" fill="#22262C" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="1.5s" dur="0.5s" fill="freeze"/>
+      </rect>
+      <g opacity="0">
+        <circle cx="700" cy="32" r="3.5" fill="#C0392B"/>
+        <circle cx="688" cy="20" r="2.2" fill="#C0392B" opacity=".7"/>
+        <circle cx="688" cy="44" r="2.2" fill="#C0392B" opacity=".7"/>
+        <circle cx="712" cy="14" r="1.6" fill="#C0392B" opacity=".45"/>
+        <circle cx="712" cy="50" r="1.6" fill="#C0392B" opacity=".45"/>
+        <animate attributeName="opacity" from="0" to="1" begin="1.9s" dur="0.6s" fill="freeze"/>
+      </g>
+    </svg>
+  </div>
+  <p class="scrollhint">scroll to begin</p>
+</section>
+
+<!-- ============ SCROLLY ============ -->
+<div class="scrolly">
+  <div class="graphic gridbg">
+    <canvas id="cv" width="840" height="640" role="img"
+      aria-label="Diagram of a sample plane and detector plane that gains layers as you scroll: pixel grids, reciprocal crossing rays, a diffraction fringe profile, and an aliasing demonstration."></canvas>
+  </div>
+
+  <div class="steps">
+
+    <section class="step" data-step="0">
+      <p class="layer">Layer 01 · the stage</p>
+      <h2>Two planes, one transform</h2>
+      <p>A coherent plane wave <span style="font-family:var(--mono)">ψ(r) = A·e<sup>ikr</sup></span>
+      illuminates an object of size <b style="color:var(--orange)">a</b>. The wave that
+      leaves the object — the <em>exit wave</em> — carries the object's absorption in its
+      amplitude and its refractive delay in its phase.</p>
+      <div class="eq">ψ<sub>ESW</sub>(r) = A(r)·e<sup>iφ₀(r)</sup></div>
+      <p>After travelling a distance <b style="color:var(--ink)">z</b>, the far-field
+      pattern landing on the detector is the <strong>Fourier transform</strong> of that
+      exit wave. Everything on this page follows from that single fact.</p>
+    </section>
+
+    <section class="step" data-step="1">
+      <p class="layer">Layer 02 · real space</p>
+      <h2>Pixelate the sample plane</h2>
+      <p>The reconstruction lives on a grid: a computational window of total width
+      <b style="color:var(--orange)">L<sub>s</sub></b>, divided into
+      <b style="color:var(--amber)">N</b> pixels of size
+      <b style="color:var(--orange)">p<sub>s</sub></b>. The object only spans
+      <b style="color:var(--amber)">m</b> of those pixels.</p>
+      <div class="eq">L<sub>s</sub> = <span class="am">N</span>·p<sub>s</sub> &nbsp;&nbsp;&nbsp; <span class="am">m</span> = a / p<sub>s</sub></div>
+      <p class="muted">The empty pixels around the object are the <em>no-density region</em>
+      (padding). They aren't wasted space — they're known zeros, the extra equations
+      phase retrieval needs to pin down the unknown phases.</p>
+    </section>
+
+    <section class="step" data-step="2">
+      <p class="layer">Layer 03 · detector space</p>
+      <h2>Pixelate the detector</h2>
+      <p>The detector has its own grid: <b style="color:var(--amber)">N</b> pixels of
+      pitch <b style="color:var(--orange)">P<sub>D</sub></b>, for a total width
+      <b style="color:var(--orange)">L<sub>D</sub></b>.</p>
+      <div class="eq">L<sub>D</sub> = <span class="am">N</span>·P<sub>D</sub></div>
+      <p class="muted">N is the <em>same</em> number on both planes — a discrete Fourier
+      transform takes N samples in and gives N samples out. The two grids are locked
+      together.</p>
+    </section>
+
+    <section class="step" data-step="3">
+      <p class="layer">Layer 04 · reciprocity</p>
+      <h2>The crossing rays</h2>
+      <p>This is the heart of your sketch. The Fourier transform pairs lengths
+      <em>inversely</em>: the <span style="color:var(--green);font-weight:500">smallest</span>
+      feature on one plane sets the <span style="color:var(--green);font-weight:500">largest</span>
+      extent on the other, and vice versa.</p>
+      <div class="eq"><span class="g">p<sub>s</sub></span> = zλ / <span class="g">L<sub>D</sub></span> &nbsp;&nbsp;&nbsp; <span class="r">P<sub>D</sub></span> = zλ / <span class="r">L<sub>s</sub></span></div>
+      <p><span style="color:var(--green);font-weight:500">Green:</span> one real-space pixel
+      ↔ the whole detector. Collect wider angles, resolve finer detail.<br>
+      <span style="color:var(--red);font-weight:500">Red:</span> the whole real-space window
+      ↔ one detector pixel. A bigger window demands finer detector sampling.</p>
+    </section>
+
+    <section class="step" data-step="4">
+      <p class="layer">Layer 05 · the signal</p>
+      <h2>An object of size a makes fringes</h2>
+      <p>Slice through the diffraction pattern and you find oscillations — speckle
+      fringes — whose characteristic spacing is set by the object size:</p>
+      <div class="eq">fringe spacing = zλ / a &nbsp;&nbsp;⇒&nbsp;&nbsp; f₀ = a / zλ</div>
+      <p class="muted">Bigger object → finer fringes. The object size <b>a</b> is the
+      highest spatial frequency the intensity pattern contains. That frequency,
+      f₀, is what the detector has to keep up with.</p>
+    </section>
+
+    <section class="step" data-step="5">
+      <p class="layer">Layer 06 · the samples</p>
+      <h2>The detector samples those fringes</h2>
+      <p>Each pixel reads the pattern once per pitch
+      <b style="color:var(--orange)">P<sub>D</sub></b>, so the detector samples at</p>
+      <div class="eq">f<sub>sampling</sub> = 1 / P<sub>D</sub></div>
+      <p>Nyquist's rule: to capture an oscillation faithfully you need
+      <strong>at least two samples per fringe</strong>. Right now each fringe spans
+      several pixels — the blue dots trace the red curve honestly.</p>
+    </section>
+
+    <section class="step" data-step="6">
+      <p class="layer">Layer 07 · the failure mode</p>
+      <h2>Aliasing — when the fringes outrun the pixels</h2>
+      <p><span class="tag red">OS &lt; 2</span> Move the detector too close (or image too
+      large an object) and the fringes squeeze tighter than two pixels. The samples
+      still land on the true curve, but the curve they <em>imply</em> — dashed blue — is
+      a slower, fake oscillation. Entire fringes vanish.</p>
+      <p class="muted">Notice the sample plane on the left: the object now nearly fills
+      the window. Insufficient sampling in detector space <em>is</em> insufficient
+      padding in real space — they are the same condition seen from the two planes.</p>
+    </section>
+
+    <section class="step" data-step="7">
+      <p class="layer">Layer 08 · the condition</p>
+      <h2>The oversampling ratio</h2>
+      <p>Divide sampling rate by signal rate and every quantity on this page collapses
+      into one dimensionless number:</p>
+      <div class="eq">OS = f<sub>samp</sub> / f₀ = <b>zλ / (a·P<sub>D</sub>)</b> = L<sub>s</sub> / a = <span class="am">N / m</span> &nbsp;&gt;&nbsp; 2</div>
+      <p>Detector-geometry form, real-space-length form, pixel-count form — the same
+      number three ways. Satisfy it anywhere and you've satisfied it everywhere.</p>
+    </section>
+
+    <section class="step" data-step="8">
+      <p class="layer">Layer 09 · the trade-off</p>
+      <h2>Resolution pulls the other way</h2>
+      <p>The reconstruction's pixel size — your resolution — is set by the full
+      detector width:</p>
+      <div class="eq"><span class="g">p<sub>s</sub></span> = zλ / (N·P<sub>D</sub>)</div>
+      <p>Increasing <b>z</b> raises OS (good) but coarsens p<sub>s</sub> (bad). And at
+      the threshold OS = 2 exactly, z, λ and P<sub>D</sub> all cancel:</p>
+      <div class="eq">p<sub>s</sub>│<sub>OS=2</sub> = 2a / N</div>
+      <p class="muted">The best resolution compatible with the sampling condition is
+      fixed by your pixel count alone. More resolution requires more pixels — distance
+      can't buy it.</p>
+    </section>
+
+    <section class="step" data-step="9">
+      <p class="layer">Layer 10 · BCDI numbers</p>
+      <h2>A gold grain at a synchrotron</h2>
+      <p>Typical Bragg CDI setup: <b>9 keV</b> photons (λ = 1.378 Å), a
+      <b>300 nm</b> Au nanocrystal, a photon-counting detector with
+      <b>55 µm</b> pixels and <b>N = 256</b> across the region of interest.</p>
+      <div class="eq">z<sub>min</sub> = 2·a·P<sub>D</sub> / λ ≈ <b>0.24 m</b></div>
+      <div class="eq">at z = 0.5 m: &nbsp;OS ≈ <b>4.2</b>, &nbsp;p<sub>s</sub> ≈ <b>4.9 nm</b>, &nbsp;L<sub>D</sub> ≈ 14.1 mm</div>
+      <p class="muted">Half a metre comfortably clears the threshold and resolves
+      ~5 nm features — strain lobes, facets — across the grain. Try moving everything
+      yourself below.</p>
+    </section>
+
+  </div>
+</div>
+
+<!-- ============ SANDBOX ============ -->
+<section class="sandbox gridbg" id="sandbox">
+  <header>
+    <p class="eyebrow">Free play</p>
+    <h2>The full instrument</h2>
+    <p>Every variable, live. Watch the rays, the fringes, and the padding respond
+    together. The status flips the moment you cross OS = 2.</p>
+  </header>
+
+  <div class="sb-grid">
+    <div class="controls">
+      <div class="ctl">
+        <label for="sE">photon energy E <output id="oE">9.0 keV · λ = 1.378 Å</output></label>
+        <input type="range" id="sE" min="5" max="15" step="0.1" value="9">
+      </div>
+      <div class="ctl">
+        <label for="sA">object size a <output id="oA">300 nm</output></label>
+        <input type="range" id="sA" min="50" max="1200" step="10" value="300">
+      </div>
+      <div class="ctl">
+        <label for="sP">detector pixel P<sub>D</sub> <output id="oP">55 µm</output></label>
+        <input type="range" id="sP" min="25" max="200" step="5" value="55">
+      </div>
+      <div class="ctl">
+        <label for="sN">pixels N <output id="oN">256</output></label>
+        <input type="range" id="sN" min="64" max="1024" step="64" value="256">
+      </div>
+      <div class="ctl">
+        <label for="sZ">distance z <output id="oZ">0.50 m</output></label>
+        <input type="range" id="sZ" min="0.05" max="3" step="0.01" value="0.5">
+      </div>
+      <p class="note">Drag z below ~0.24 m with the defaults and watch the aliased
+      curve appear — and the padding on the sample plane collapse with it.</p>
+    </div>
+
+    <div>
+      <div class="readouts">
+        <div class="ro"><div class="lbl">oversampling OS = zλ/(a·P_D)</div><div class="val" id="rOS">4.18</div></div>
+        <div class="ro"><div class="lbl">resolution p_s = zλ/(N·P_D)</div><div class="val" id="rPS">4.89 nm</div></div>
+        <div class="ro"><div class="lbl">min distance z_min (OS = 2)</div><div class="val" id="rZM">0.24 m</div></div>
+        <div class="ro"><div class="lbl">detector width L_D = N·P_D</div><div class="val" id="rLD">14.1 mm</div></div>
+        <div class="ro status"><div class="lbl">sampling status</div><div class="val" id="sbStatus">—</div></div>
+      </div>
+      <div class="sb-canvas-wrap gridbg">
+        <canvas id="cv2" width="840" height="640" role="img"
+          aria-label="Live diagram driven by the sliders: sample and detector planes with crossing rays, and a fringe profile showing whether the detector pixels sample the fringes faithfully or alias them."></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCE ============ -->
+<section class="reference">
+  <h2>Pocket reference</h2>
+  <div class="refcards">
+    <div class="refcard">
+      <h3>Reciprocal sampling</h3>
+      <div class="eq">p<sub>s</sub> = zλ / (N·P<sub>D</sub>)<br>P<sub>D</sub> = zλ / (N·p<sub>s</sub>)</div>
+      <p>One Fourier relationship solved two ways. Detector extent sets real-space
+      resolution; window extent sets the detector pitch you need.</p>
+    </div>
+    <div class="refcard">
+      <h3>Oversampling condition</h3>
+      <div class="eq">OS = zλ/(a·P<sub>D</sub>) = L<sub>s</sub>/a = N/m &gt; 2</div>
+      <p>Two samples per fringe (Nyquist), equivalently a window at least twice the
+      object. Aim for 3–4 in practice — algorithms are happier away from the edge.</p>
+    </div>
+    <div class="refcard">
+      <h3>Resolution ceiling</h3>
+      <div class="eq">p<sub>s</sub>│<sub>OS=2</sub> = 2a / N</div>
+      <p>At the threshold, distance, wavelength and pixel pitch all cancel. Pixel
+      count is the only lever on resolution that doesn't cost you sampling.</p>
+    </div>
+    <div class="refcard">
+      <h3>BCDI defaults used here</h3>
+      <div class="eq">E = 9 keV → λ = 1.378 Å<br>a = 300 nm · P<sub>D</sub> = 55 µm · N = 256</div>
+      <p>λ[Å] = 12.398 / E[keV]. A 55 µm pitch matches common photon-counting
+      detectors (Medipix/Timepix family) at coherent-imaging beamlines.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  built from a whiteboard derivation · OS = zλ/(a·P_D) = L_s/a = N/m &gt; 2 ·
+  variables follow the CDI crash-course notation
+</footer>
+
+<script>
+"use strict";
+/* ================= shared scene renderer ================= */
+const C = {
+  ink:"#22262C", soft:"#7A7F87", orange:"#D9731F", amber:"#B8860B",
+  green:"#1E7D43", red:"#C0392B", blue:"#2B6CB0", paper:"#FBF9F1"
+};
+const W=840, H=640;
+const Sx=215, Dx=645;                 // plane x positions
+const cy=235;                          // optical axis y
+const Ls=232, Ld=296;                  // drawn window heights
+const NV=12;                           // visual pixel count per plane
+const psv=Ls/NV, pdv=Ld/NV;            // visual pixel sizes
+const sTop=cy-Ls/2, sBot=cy+Ls/2;
+const dTop=cy-Ld/2, dBot=cy+Ld/2;
+const stripX0=130, stripX1=710, stripY=478, stripH=118;
+const NSTRIP=22;
+
+function makeDraw(canvas){
+  const ctx=canvas.getContext("2d");
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  ctx.scale(dpr,dpr);
+  return ctx;
+}
+
+function alpha(hex,a){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* measurement bar: vertical line with end caps + label */
+function vbar(ctx,x,y1,y2,color,a,label,side,labelDy){
+  if(a<=0.01) return;
+  ctx.strokeStyle=alpha(color,a); ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(x,y1); ctx.lineTo(x,y2);
+  ctx.moveTo(x-5,y1); ctx.lineTo(x+5,y1);
+  ctx.moveTo(x-5,y2); ctx.lineTo(x+5,y2);
+  ctx.stroke();
+  if(label){
+    ctx.fillStyle=alpha(color,a);
+    ctx.font="500 13px 'IBM Plex Mono', monospace";
+    ctx.textAlign = side==="left" ? "end" : "start";
+    ctx.textBaseline="middle";
+    const lx = side==="left" ? x-10 : x+10;
+    ctx.fillText(label, lx, (y1+y2)/2 + (labelDy||0));
+  }
+}
+
+function arrow(ctx,x1,y1,x2,y2,color,a,w){
+  if(a<=0.01) return;
+  ctx.strokeStyle=alpha(color,a); ctx.lineWidth=w||1.5;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang=Math.atan2(y2-y1,x2-x1);
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(ang-0.4), y2-9*Math.sin(ang-0.4));
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(ang+0.4), y2-9*Math.sin(ang+0.4));
+  ctx.stroke();
+}
+
+function label(ctx,txt,x,y,color,a,align,size,weight){
+  if(a<=0.01) return;
+  ctx.fillStyle=alpha(color,a);
+  ctx.font=`${weight||400} ${size||13}px 'IBM Plex Mono', monospace`;
+  ctx.textAlign=align||"center"; ctx.textBaseline="middle";
+  ctx.fillText(txt,x,y);
+}
+
+/* the object blob */
+function blob(ctx,xc,yc,h,a,fillA){
+  if(a<=0.01) return;
+  const w=h*0.55;
+  ctx.save();
+  ctx.translate(xc,yc);
+  ctx.beginPath();
+  ctx.moveTo(0,-h/2);
+  ctx.bezierCurveTo(w*0.62,-h/2+h*0.06, w*0.55,h*0.28, 0,h/2);
+  ctx.bezierCurveTo(-w*0.58,h*0.34, -w*0.5,-h*0.3, 0,-h/2);
+  ctx.closePath();
+  ctx.fillStyle=alpha(C.orange,0.13*fillA);
+  ctx.strokeStyle=alpha(C.ink,a);
+  ctx.lineWidth=1.6;
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+/* sinc^2 fringe profile in the strip; spacing s in px */
+function sinc2(u){ if(Math.abs(u)<1e-9) return 1; const v=Math.PI*u; return Math.pow(Math.sin(v)/v,2); }
+
+function drawStrip(ctx,s){
+  const a=s.strip; if(a<=0.01) return;
+  const w=stripX1-stripX0;
+  const pd=w/NSTRIP;
+  const xc=(stripX0+stripX1)/2;
+  const spacing=Math.max(0.55,s.os)*pd;     // fringe spacing in px = OS pixels
+
+  /* frame + pixel ticks */
+  ctx.strokeStyle=alpha(C.ink,0.55*a); ctx.lineWidth=1;
+  ctx.strokeRect(stripX0,stripY,w,stripH);
+  for(let i=1;i<NSTRIP;i++){
+    const x=stripX0+i*pd;
+    ctx.strokeStyle=alpha(C.ink,0.13*a);
+    ctx.beginPath(); ctx.moveTo(x,stripY); ctx.lineTo(x,stripY+stripH); ctx.stroke();
+  }
+  label(ctx,"detector cross-section · intensity vs x",xc,stripY-14,C.soft,a,"center",12);
+  label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
+
+  const base=stripY+stripH-12, amp=stripH-34;
+  const I=x=>sinc2((x-xc)/spacing);
+
+  /* true curve (red) */
+  ctx.strokeStyle=alpha(C.red,0.95*a); ctx.lineWidth=1.8;
+  ctx.beginPath();
+  for(let px=0;px<=w;px+=1.5){
+    const x=stripX0+px, y=base-amp*I(x);
+    px===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  /* samples at pixel centers (blue dots) */
+  const da=s.dots*a; 
+  const pts=[];
+  for(let i=0;i<NSTRIP;i++){
+    const x=stripX0+(i+0.5)*pd, y=base-amp*I(x);
+    pts.push([x,y]);
+  }
+  if(da>0.01){
+    /* aliased reconstruction: smooth curve through samples, shown when under-sampled */
+    const showAlias=s.alias*a*(s.os<2.05?1:Math.max(0,(2.5-s.os)/0.45));
+    if(showAlias>0.02){
+      ctx.strokeStyle=alpha(C.blue,0.9*showAlias);
+      ctx.lineWidth=1.8; ctx.setLineDash([6,5]);
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0],pts[0][1]);
+      for(let i=0;i<pts.length-1;i++){
+        const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+        for(let t=0.1;t<=1.001;t+=0.1){
+          const t2=t*t,t3=t2*t;
+          const x=0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3);
+          const y=0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3);
+          ctx.lineTo(x,y);
+        }
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,"what the samples imply",stripX1-8,stripY+18,C.blue,showAlias,"end",12);
+    }
+    for(const [x,y] of pts){
+      ctx.fillStyle=alpha(C.blue,da);
+      ctx.beginPath(); ctx.arc(x,y,3.4,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=alpha(C.blue,0.35*da);
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,base+6); ctx.stroke();
+    }
+  }
+
+  /* fringe-spacing bracket on the true curve */
+  const fb=s.fringeLbl*a;
+  if(fb>0.01){
+    const x1=xc+spacing, x2=xc+2*spacing;
+    if(x2<stripX1-4){
+      ctx.strokeStyle=alpha(C.green,fb); ctx.lineWidth=1.4;
+      ctx.beginPath();
+      ctx.moveTo(x1,base+8); ctx.lineTo(x2,base+8);
+      ctx.moveTo(x1,base+4); ctx.lineTo(x1,base+12);
+      ctx.moveTo(x2,base+4); ctx.lineTo(x2,base+12);
+      ctx.stroke();
+      label(ctx,"zλ/a",(x1+x2)/2,base+22,C.green,fb,"center",12,500);
+    }
+  }
+
+  /* OS chip */
+  if(s.osChip*a>0.01){
+    const txt="OS = "+(Math.round(s.os*10)/10).toFixed(1);
+    const good=s.os>=2;
+    const col=good?C.green:C.red;
+    ctx.font="500 13px 'IBM Plex Mono', monospace";
+    const tw=ctx.measureText(txt).width;
+    const bx=stripX0+8,by=stripY+10;
+    ctx.fillStyle=alpha(col,0.1*s.osChip*a);
+    ctx.strokeStyle=alpha(col,0.85*s.osChip*a);
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.roundRect(bx,by,tw+18,22,11);
+    ctx.fill(); ctx.stroke();
+    label(ctx,txt,bx+9+tw/2,by+11.5,col,s.osChip*a,"center",13,500);
+  }
+}
+
+function drawScene(ctx,s){
+  ctx.clearRect(0,0,W,H);
+
+  /* ---- beam / z arrow ---- */
+  if(s.beam>0.01){
+    arrow(ctx,Sx+14,72,Dx-14,72,C.ink,0.6*s.beam,1.3);
+    label(ctx,"z  ·  λ",(Sx+Dx)/2,56,C.ink,0.85*s.beam,"center",14,500);
+    /* incoming wave */
+    ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let x=30;x<=128;x+=2){
+      const y=cy+13*Math.sin((x-30)/9.5);
+      x===30?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    arrow(ctx,128,cy,150,cy,C.blue,0.8*s.beam,1.5);
+    label(ctx,"ψ = A·e^{ikr}",78,cy-30,C.blue,0.85*s.beam,"center",12.5);
+  }
+
+  /* ---- crossing rays (under planes) ---- */
+  if(s.rays>0.01){
+    const og=s.objH/2;
+    /* red: full sample window -> one detector pixel */
+    ctx.strokeStyle=alpha(C.red,0.8*s.rays); ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(Sx,sTop); ctx.lineTo(Dx,cy+pdv/2);
+    ctx.moveTo(Sx,sBot); ctx.lineTo(Dx,cy-pdv/2);
+    ctx.stroke();
+    /* green: one sample pixel -> full detector */
+    ctx.strokeStyle=alpha(C.green,0.8*s.rays); ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(Sx,cy-psv/2); ctx.lineTo(Dx,dBot);
+    ctx.moveTo(Sx,cy+psv/2); ctx.lineTo(Dx,dTop);
+    ctx.stroke();
+    label(ctx,"L_s ↔ P_D",(Sx+Dx)/2,cy-86,C.red,0.9*s.rays,"center",12.5,500);
+    label(ctx,"p_s ↔ L_D",(Sx+Dx)/2,cy+92,C.green,0.9*s.rays,"center",12.5,500);
+  }
+
+  /* ---- sample plane ---- */
+  if(s.planes>0.01){
+    ctx.strokeStyle=alpha(C.ink,s.planes); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(Sx,sTop-16); ctx.lineTo(Sx,sBot+16); ctx.stroke();
+    label(ctx,"sample plane",Sx,sBot+38,C.ink,0.8*s.planes,"center",12.5);
+  }
+  /* sample ticks */
+  if(s.sGrid>0.01){
+    ctx.strokeStyle=alpha(C.ink,0.75*s.sGrid); ctx.lineWidth=1.2;
+    for(let i=0;i<=NV;i++){
+      const y=sTop+i*psv;
+      ctx.beginPath(); ctx.moveTo(Sx-5,y); ctx.lineTo(Sx+5,y); ctx.stroke();
+    }
+    /* highlight one pixel */
+    ctx.fillStyle=alpha(C.orange,0.22*s.sGrid);
+    ctx.fillRect(Sx-5,sTop,10,psv);
+    label(ctx,"p_s",Sx-14,sTop+psv/2,C.orange,s.sGrid,"end",12.5,500);
+  }
+
+  /* object blob + guides */
+  if(s.obj>0.01){
+    const h=s.objH;
+    blob(ctx,Sx-92,cy,h,s.obj,s.obj);
+    vbar(ctx,Sx-138,cy-h/2,cy+h/2,C.orange,s.obj,"a","left");
+    /* dashed guides onto the plane */
+    ctx.strokeStyle=alpha(C.blue,0.55*s.obj); ctx.setLineDash([5,5]); ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(Sx-72,cy-h/2); ctx.lineTo(Sx,cy-h/2);
+    ctx.moveTo(Sx-72,cy+h/2); ctx.lineTo(Sx,cy+h/2);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  /* m + N brackets, padding label */
+  if(s.sLabels>0.01){
+    const h=s.objH;
+    vbar(ctx,Sx+30,cy-h/2,cy+h/2,C.amber,s.sLabels,"m = a/p_s","right");
+    vbar(ctx,Sx+118,sTop,sBot,C.amber,0.85*s.sLabels,"N","right");
+    vbar(ctx,Sx-44,sTop,sBot,C.orange,0.9*s.sLabels,"L_s","left",-(Ls/2)-(-12));
+    /* padding annotations */
+    const padA=s.sLabels*Math.min(1,Math.max(0,(s.osGeom-1.15)/0.6));
+    label(ctx,"padding",Sx+66,(sTop+cy-h/2)/2,C.soft,0.8*padA,"center",11.5);
+    label(ctx,"(zeros)",Sx+66,(sTop+cy-h/2)/2+14,C.soft,0.6*padA,"center",11.5);
+  }
+
+  /* ---- detector plane ---- */
+  if(s.planes>0.01){
+    ctx.strokeStyle=alpha(C.ink,s.planes); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(Dx,dTop-16); ctx.lineTo(Dx,dBot+16); ctx.stroke();
+    label(ctx,"detector plane",Dx,dBot+38,C.ink,0.8*s.planes,"center",12.5);
+  }
+  if(s.dGrid>0.01){
+    ctx.strokeStyle=alpha(C.ink,0.75*s.dGrid); ctx.lineWidth=1.2;
+    for(let i=0;i<=NV;i++){
+      const y=dTop+i*pdv;
+      ctx.beginPath(); ctx.moveTo(Dx-5,y); ctx.lineTo(Dx+5,y); ctx.stroke();
+    }
+    ctx.fillStyle=alpha(C.orange,0.22*s.dGrid);
+    ctx.fillRect(Dx-5,dTop,10,pdv);
+    label(ctx,"P_D",Dx+14,dTop+pdv/2,C.orange,s.dGrid,"start",12.5,500);
+    vbar(ctx,Dx+52,dTop,dBot,C.orange,0.9*s.dGrid,"L_D","right");
+    vbar(ctx,Dx-34,dTop,dBot,C.amber,0.85*s.dGrid,"N","left");
+  }
+
+  drawStrip(ctx,s);
+}
+
+/* ================= walkthrough state machine ================= */
+const objHFor = osGeom => Ls/Math.max(1.04,osGeom);
+
+const STEPS=[
+  /* 0 two planes   */ {planes:1,beam:1,obj:1,sGrid:0,dGrid:0,sLabels:0,rays:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 1 sample grid  */ {planes:1,beam:.35,obj:1,sGrid:1,dGrid:0,sLabels:1,rays:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 2 det grid     */ {planes:1,beam:.25,obj:1,sGrid:1,dGrid:1,sLabels:.55,rays:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 3 rays         */ {planes:1,beam:.15,obj:.85,sGrid:1,dGrid:1,sLabels:.3,rays:1,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 4 fringes      */ {planes:1,beam:.15,obj:.85,sGrid:.7,dGrid:.7,sLabels:.2,rays:.35,strip:1,dots:0,alias:0,fringeLbl:1,osChip:0,os:4,osGeom:3},
+  /* 5 sampling     */ {planes:1,beam:.15,obj:.85,sGrid:.6,dGrid:.85,sLabels:.2,rays:.25,strip:1,dots:1,alias:0,fringeLbl:.5,osChip:1,os:4,osGeom:3},
+  /* 6 aliasing     */ {planes:1,beam:.1,obj:1,sGrid:.8,dGrid:.85,sLabels:.75,rays:.2,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:1.3,osGeom:1.3},
+  /* 7 condition    */ {planes:1,beam:.1,obj:1,sGrid:.9,dGrid:.9,sLabels:1,rays:.5,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:2.5,osGeom:2.5},
+  /* 8 resolution   */ {planes:1,beam:.3,obj:.85,sGrid:1,dGrid:1,sLabels:.5,rays:1,strip:1,dots:1,alias:0,fringeLbl:0,osChip:1,os:3,osGeom:3},
+  /* 9 bcdi         */ {planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.7,rays:.6,strip:1,dots:1,alias:0,fringeLbl:.4,osChip:1,os:4.2,osGeom:4.2},
+];
+
+const cv=document.getElementById("cv");
+const ctx1=makeDraw(cv);
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let target={...STEPS[0],objH:objHFor(STEPS[0].osGeom)};
+let cur={...target};
+
+const keys=Object.keys(STEPS[0]);
+function setStep(i){
+  const t={...STEPS[Math.max(0,Math.min(STEPS.length-1,i))]};
+  t.objH=objHFor(t.osGeom);
+  target=t;
+  if(reduced){cur={...t};drawScene(ctx1,cur);}
+}
+
+const obs=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting) setStep(+e.target.dataset.step); });
+},{threshold:0.45});
+document.querySelectorAll(".step").forEach(el=>obs.observe(el));
+
+function tick(){
+  if(!reduced){
+    let moving=false;
+    for(const k of [...keys,"objH"]){
+      const d=target[k]-cur[k];
+      if(Math.abs(d)>0.001){cur[k]+=d*0.085;moving=true;}
+      else cur[k]=target[k];
+    }
+    drawScene(ctx1,cur);
+  }
+  requestAnimationFrame(tick);
+}
+drawScene(ctx1,cur);
+requestAnimationFrame(tick);
+
+/* ================= sandbox ================= */
+const cv2=document.getElementById("cv2");
+const ctx2=makeDraw(cv2);
+const $=id=>document.getElementById(id);
+const sE=$("sE"),sA=$("sA"),sP=$("sP"),sN=$("sN"),sZ=$("sZ");
+
+function fmt(v,d){return v.toFixed(d);}
+
+function sandbox(){
+  const E=+sE.value;                  // keV
+  const a=+sA.value*1e-9;             // m
+  const Pd=+sP.value*1e-6;            // m
+  const N=+sN.value;
+  const z=+sZ.value;                  // m
+  const lam=12.398/E*1e-10;           // m
+
+  const OS=z*lam/(a*Pd);
+  const ps=z*lam/(N*Pd);
+  const zmin=2*a*Pd/lam;
+  const LD=N*Pd;
+
+  $("oE").textContent=`${fmt(E,1)} keV · λ = ${fmt(lam*1e10,3)} Å`;
+  $("oA").textContent=`${sA.value} nm`;
+  $("oP").textContent=`${sP.value} µm`;
+  $("oN").textContent=sN.value;
+  $("oZ").textContent=`${fmt(z,2)} m`;
+
+  $("rOS").textContent=fmt(OS,2);
+  $("rPS").textContent=ps<1e-9?fmt(ps*1e12,0)+" pm":fmt(ps*1e9,2)+" nm";
+  $("rZM").textContent=fmt(zmin,2)+" m";
+  $("rLD").textContent=fmt(LD*1e3,1)+" mm";
+
+  const st=$("sbStatus");
+  if(OS<2){st.textContent="aliased — OS < 2";st.className="val bad";}
+  else if(OS<2.5){st.textContent="marginal — near threshold";st.className="val warn";}
+  else{st.textContent="oversampled ✓";st.className="val ok";}
+
+  const osV=Math.max(0.6,Math.min(8,OS));
+  drawScene(ctx2,{
+    planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.85,rays:.7,
+    strip:1,dots:1,alias:1,fringeLbl:.4,osChip:1,
+    os:osV,osGeom:osV,objH:objHFor(osV)
+  });
+}
+[sE,sA,sP,sN,sZ].forEach(el=>el.addEventListener("input",sandbox));
+sandbox();
+</script>
+</body>
+</html>
