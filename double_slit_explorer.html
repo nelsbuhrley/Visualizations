@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The double slit, oversampled — coherent diffraction geometry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBF9F1;
+  --grid:#E2E6EC;
+  --ink:#22262C;
+  --ink-soft:#5B6068;
+  --orange:#D9731F;
+  --amber:#B8860B;
+  --green:#1E7D43;
+  --red:#C0392B;
+  --blue:#2B6CB0;
+  --card:#FFFFFF;
+  --rule:#D8D4C8;
+  --display:'Space Grotesk',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  font-size:16px;line-height:1.65;
+}
+.gridbg{
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:26px 26px;
+}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+
+/* ---------- hero ---------- */
+.hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;
+  padding:8vh 6vw 6vh;position:relative;overflow:hidden}
+.hero .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--orange);margin-bottom:1.2rem}
+.hero h1{font-family:var(--display);font-weight:600;font-size:clamp(2.4rem,6vw,4.6rem);
+  line-height:1.04;max-width:13ch}
+.hero h1 .lt{color:var(--ink-soft);font-weight:500}
+.hero p.sub{max-width:54ch;margin-top:1.4rem;font-size:1.06rem;color:var(--ink-soft)}
+.hero .beam{margin-top:2.6rem;height:64px;position:relative;max-width:760px}
+.hero .beam svg{width:100%;height:100%;overflow:visible}
+.scrollhint{position:absolute;bottom:2.2rem;left:6vw;font-family:var(--mono);
+  font-size:12px;color:var(--ink-soft);letter-spacing:.1em}
+.scrollhint::after{content:'↓';display:inline-block;margin-left:.5em;
+  animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){.scrollhint::after{animation:none}}
+
+/* ---------- scrolly layout ---------- */
+.scrolly{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);
+  gap:0;align-items:start;border-top:1px solid var(--rule)}
+.graphic{position:sticky;top:0;height:100vh;display:flex;align-items:center;
+  justify-content:center;padding:2vh 1.5vw;border-right:1px solid var(--rule)}
+.graphic canvas{width:100%;height:auto;max-height:92vh;display:block}
+.steps{padding:0 5vw 0 4vw}
+.step{min-height:92vh;display:flex;flex-direction:column;justify-content:center;
+  padding:10vh 0}
+.step .layer{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--orange);margin-bottom:.9rem}
+.step h2{font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1.2;
+  margin-bottom:1rem;max-width:24ch}
+.step p{color:var(--ink);max-width:52ch;margin-bottom:1rem}
+.step p.muted{color:var(--ink-soft);font-size:.94rem}
+.eq{font-family:var(--mono);background:var(--card);border:1px solid var(--rule);
+  border-left:3px solid var(--orange);border-radius:0 8px 8px 0;
+  padding:.8rem 1.1rem;margin:1.1rem 0;font-size:.98rem;line-height:1.9;
+  overflow-x:auto;white-space:nowrap}
+.eq b{font-weight:500;color:var(--orange)}
+.eq .g{color:var(--green)} .eq .r{color:var(--red)} .eq .bl{color:var(--blue)}
+.eq .am{color:var(--amber)}
+sub{font-size:.72em}
+.tag{display:inline-block;font-family:var(--mono);font-size:12px;
+  padding:2px 10px;border-radius:99px;border:1px solid;margin-right:.4rem}
+.tag.red{color:var(--red);border-color:var(--red)}
+.tag.green{color:var(--green);border-color:var(--green)}
+.tag.amber{color:var(--amber);border-color:var(--amber)}
+
+/* ---------- BCDI comparison callout ---------- */
+.bcdi{background:#EEF3FA;border:1px solid #CADBEC;border-left:3px solid var(--blue);
+  border-radius:0 8px 8px 0;padding:.75rem 1rem;margin:1.1rem 0 0;max-width:52ch}
+.bcdi .tagb{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blue);margin-bottom:.4rem}
+.bcdi p{margin:0;font-size:.93rem;color:var(--ink)}
+.bcdi p + p{margin-top:.55rem}
+
+/* ---------- sandbox ---------- */
+.sandbox{border-top:1px solid var(--rule);padding:6vh 6vw}
+.sandbox header{max-width:760px;margin-bottom:1.6rem}
+.sandbox header .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--orange);margin-bottom:1rem}
+.sandbox h2{font-family:var(--display);font-weight:600;font-size:2.1rem;margin-bottom:.8rem}
+.sandbox header p{color:var(--ink-soft);max-width:56ch}
+.sb-grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:1.6rem;align-items:start}
+.controls{display:flex;flex-direction:column;gap:.95rem}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-bottom:.35rem}
+.ctl label output{color:var(--ink);font-weight:500;font-size:14px}
+.ctl input[type=range]{width:100%;accent-color:var(--orange);height:22px;cursor:pointer}
+.readouts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.4rem}
+.ro{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:.55rem .75rem}
+.ro.status{grid-column:1/-1}
+.ro .lbl{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);
+  letter-spacing:.05em;margin-bottom:.2rem}
+.ro .val{font-family:var(--mono);font-size:1.1rem;font-weight:500}
+.ro.status .val{font-size:1rem;padding-top:.2rem}
+#sbStatus.ok{color:var(--green)} #sbStatus.warn{color:var(--amber)} #sbStatus.bad{color:var(--red)}
+.sb-canvas-wrap{background:var(--paper);border:1px solid var(--rule);border-radius:12px;
+  padding:6px}
+.sb-canvas-wrap canvas{width:auto;max-width:100%;max-height:78vh;height:auto;display:block;margin:0 auto}
+.note{font-size:.9rem;color:var(--ink-soft);margin-top:1rem;max-width:64ch}
+
+/* ---------- reference ---------- */
+.reference{border-top:1px solid var(--rule);padding:8vh 6vw 6vh}
+.reference h2{font-family:var(--display);font-weight:600;font-size:1.8rem;margin-bottom:2rem}
+.refcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.refcard{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+  padding:1.1rem 1.25rem}
+.refcard h3{font-family:var(--display);font-size:1.02rem;font-weight:600;margin-bottom:.5rem}
+.refcard .eq{margin:.6rem 0;border-left-color:var(--blue)}
+.refcard p{font-size:.9rem;color:var(--ink-soft)}
+footer{padding:3rem 6vw 4rem;font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);
+  border-top:1px solid var(--rule)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .scrolly{grid-template-columns:1fr}
+  .graphic{position:sticky;top:0;height:46vh;border-right:none;
+    border-bottom:1px solid var(--rule);background:var(--paper);z-index:5;
+    padding:1vh 2vw}
+  .graphic canvas{max-height:44vh}
+  .step{min-height:74vh;padding:6vh 0}
+  .steps{padding:0 6vw}
+  .sb-grid{grid-template-columns:1fr}
+  .hero h1{font-size:clamp(2rem,9vw,3rem)}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav style="padding:0.75rem 1.5rem;font-size:0.875rem">
+  <a href="index.html" style="color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px">← all visualizations</a>
+  &nbsp;·&nbsp;
+  <a href="oversampling_explorer.html" style="color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px">amorphous-object version</a>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero gridbg">
+  <p class="eyebrow">Coherent diffractive imaging · the double slit</p>
+  <h1>Two slits,<br><span class="lt">oversampled.</span></h1>
+  <p class="sub">A screen with two slits, a detector, and one Fourier transform between
+  them. Scroll to build the picture one layer at a time — pixels, reciprocal lengths,
+  interference fringes, and the moment everything aliases — with the same geometry
+  read back, at every step, as Bragg CDI on a crystal. Then take the controls.</p>
+  <div class="beam" aria-hidden="true">
+    <svg viewBox="0 0 760 64">
+      <line x1="0" y1="32" x2="760" y2="32" stroke="#D9731F" stroke-width="1.5"
+        stroke-dasharray="760" stroke-dashoffset="760">
+        <animate attributeName="stroke-dashoffset" from="760" to="0" dur="1.6s" fill="freeze"/>
+      </line>
+      <path d="M40 32 q10 -14 20 0 q10 14 20 0 q10 -14 20 0 q10 14 20 0" fill="none"
+        stroke="#2B6CB0" stroke-width="1.5" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="1.2s" dur="0.6s" fill="freeze"/>
+      </path>
+      <g opacity="0">
+        <rect x="372" y="6"  width="8" height="16" rx="2" fill="#22262C"/>
+        <rect x="372" y="28" width="8" height="8"  rx="2" fill="#22262C"/>
+        <rect x="372" y="42" width="8" height="16" rx="2" fill="#22262C"/>
+        <animate attributeName="opacity" from="0" to="1" begin="1.5s" dur="0.5s" fill="freeze"/>
+      </g>
+      <g opacity="0">
+        <circle cx="700" cy="32" r="3.6" fill="#C0392B"/>
+        <circle cx="700" cy="16" r="2.4" fill="#C0392B" opacity=".62"/>
+        <circle cx="700" cy="48" r="2.4" fill="#C0392B" opacity=".62"/>
+        <circle cx="700" cy="6"  r="1.5" fill="#C0392B" opacity=".34"/>
+        <circle cx="700" cy="58" r="1.5" fill="#C0392B" opacity=".34"/>
+        <animate attributeName="opacity" from="0" to="1" begin="1.9s" dur="0.6s" fill="freeze"/>
+      </g>
+    </svg>
+  </div>
+  <p class="scrollhint">scroll to begin</p>
+</section>
+
+<!-- ============ SCROLLY ============ -->
+<div class="scrolly">
+  <div class="graphic gridbg">
+    <canvas id="cv" width="840" height="640" role="img"
+      aria-label="Diagram of a double-slit screen and a detector plane that gains layers as you scroll: pixel grids, reciprocal crossing rays, an interference-fringe profile, and an aliasing demonstration."></canvas>
+  </div>
+
+  <div class="steps">
+
+    <section class="step" data-step="0">
+      <p class="layer">Layer 01 · the stage</p>
+      <h2>Two slits, one transform</h2>
+      <p>A coherent plane wave <span style="font-family:var(--mono)">ψ(r) = A·e<sup>ikr</sup></span>
+      of wavelength <b style="color:var(--blue)">λ</b> hits an opaque screen pierced by
+      two slits — separation <b style="color:var(--orange)">d</b>, each of width
+      <b style="color:var(--amber)">w</b>. The wave just past the screen — the
+      <em>exit wave</em> — is bright across the two openings and zero on the bar.</p>
+      <div class="eq">ψ<sub>ESW</sub>(r) = A(r)·e<sup>iφ₀(r)</sup> &nbsp; <span style="color:var(--ink-soft)">(two open apertures)</span></div>
+      <p>After travelling a distance <b style="color:var(--ink)">z</b>, the pattern on the
+      detector is the <strong>Fourier transform</strong> of that exit wave — Young's
+      interference fringes. Everything on this page follows from that single fact.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Swap the screen for a crystal. Its exit wave carries the lattice and shape; the
+        far field is again a Fourier transform — only it sits wrapped around a
+        <strong>Bragg peak</strong> instead of the zero-angle axis. BCDI runs the trip in
+        reverse: measure the far field, apply the <strong>inverse</strong> transform, and
+        reconstruct the object.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="1">
+      <p class="layer">Layer 02 · real space</p>
+      <h2>Pixelate the slit plane</h2>
+      <p>The reconstruction lives on a grid: a computational window of total width
+      <b style="color:var(--orange)">L<sub>s</sub></b>, divided into
+      <b style="color:var(--amber)">N</b> pixels of size
+      <b style="color:var(--orange)">p<sub>s</sub></b>. The slit pair spans only
+      <b style="color:var(--amber)">m</b> of those pixels.</p>
+      <div class="eq">L<sub>s</sub> = <span class="am">N</span>·p<sub>s</sub> &nbsp;&nbsp;&nbsp; <span class="am">m</span> = d / p<sub>s</sub></div>
+      <p>The empty pixels around the slits are the <em>no-density region</em>
+      (padding) — not wasted space but <strong>known zeros</strong>, the extra equations
+      phase retrieval needs to pin down the unknown phases.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Identical bookkeeping. The crystal sits inside a padded window; everything
+        outside its support is a known zero. The slit-pair extent <b>d</b> plays the part
+        of the crystal's overall size.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="2">
+      <p class="layer">Layer 03 · detector space</p>
+      <h2>Pixelate the detector</h2>
+      <p>The detector has its own grid: <b style="color:var(--amber)">N</b> pixels of
+      pitch <b style="color:var(--orange)">P<sub>D</sub></b>, for a total width
+      <b style="color:var(--orange)">L<sub>D</sub></b>.</p>
+      <div class="eq">L<sub>D</sub> = <span class="am">N</span>·P<sub>D</sub></div>
+      <p class="muted">N is the <em>same</em> number on both planes — a discrete Fourier
+      transform takes N samples in and gives N samples out. The two grids are locked
+      together.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Same grid, except the N pixels mark a region of interest cropped around the
+        Bragg peak rather than the forward beam.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="3">
+      <p class="layer">Layer 04 · reciprocity</p>
+      <h2>The crossing rays</h2>
+      <p>This is the heart of the whole geometry. The Fourier transform pairs lengths
+      <em>inversely</em>: the <span style="color:var(--green);font-weight:500">smallest</span>
+      feature on one plane sets the <span style="color:var(--green);font-weight:500">largest</span>
+      extent on the other, and vice versa.</p>
+      <div class="eq"><span class="g">p<sub>s</sub></span> = zλ / <span class="g">L<sub>D</sub></span> &nbsp;&nbsp;&nbsp; <span class="r">P<sub>D</sub></span> = zλ / <span class="r">L<sub>s</sub></span></div>
+      <p><span style="color:var(--green);font-weight:500">Green:</span> one real-space pixel
+      ↔ the whole detector. Collect wider angles, resolve finer detail.<br>
+      <span style="color:var(--red);font-weight:500">Red:</span> the whole real-space window
+      ↔ one detector pixel. A bigger window demands finer detector sampling.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Reciprocity is geometry-agnostic — it holds identically around a Bragg peak.
+        The same two pairs set BCDI's resolution and required detector pitch.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="4">
+      <p class="layer">Layer 05 · the signal</p>
+      <h2>Two slits make interference fringes</h2>
+      <p>A new panel has appeared below the planes: a horizontal slice through the
+      intensity on the detector. It is the textbook double-slit pattern — fast
+      <strong>cos² interference fringes</strong> set by the separation
+      <b style="color:var(--orange)">d</b>, riding under a broad
+      <strong>sinc² envelope</strong> set by the slit width
+      <b style="color:var(--amber)">w</b>.</p>
+      <div class="eq">I(x) ∝ sinc²(<span class="am">w</span>x/zλ)·cos²(π<b>d</b>x/zλ) &nbsp;⇒&nbsp; fringe spacing = zλ/<b>d</b></div>
+      <p class="muted">The slit separation <b>d</b> — the object's largest dimension —
+      sets the <em>finest</em> fringe, the highest spatial frequency the pattern
+      carries: f₀ = d/zλ. The slit width only shapes the envelope.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>The crystal's overall size plays the role of <b>d</b>: it sets the spacing of
+        the <em>speckle</em> fringes draped over the Bragg peak. The slit width <b>w</b> is
+        like fine internal structure — facets, strain — that shapes the envelope but not
+        the fringe spacing that drives sampling.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="5">
+      <p class="layer">Layer 06 · the samples</p>
+      <h2>The detector samples those fringes</h2>
+      <p>The red curve is the continuous pattern physics delivers — but the detector
+      never sees it continuously. Each pixel integrates the light falling on it and
+      reports one number, a single reading per pitch
+      <b style="color:var(--orange)">P<sub>D</sub></b>, so the detector samples at</p>
+      <div class="eq">f<sub>sampling</sub> = 1 / P<sub>D</sub></div>
+      <p>Each <b style="color:var(--blue)">blue dot</b> in the strip is one of those
+      readings: the intensity at one pixel's centre, lifted off the red curve.
+      Nyquist's rule: to capture an oscillation faithfully you need
+      <strong>at least two samples per fringe</strong>. Right now each interference
+      fringe spans several pixels — the blue dots trace the red curve honestly.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Same Nyquist demand on the speckle. Two pixels per speckle fringe is the floor;
+        below it, the recorded pattern no longer determines the crystal.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="6">
+      <p class="layer">Layer 07 · the failure mode</p>
+      <h2>Aliasing — when the fringes outrun the pixels</h2>
+      <p><span class="tag red">OS &lt; 2</span> Move the detector too close (or widen the
+      slit separation) and the fringes squeeze tighter than two pixels. The blue dots —
+      the pixels' readings — still land on the true curve, but the curve they
+      <em>imply</em> — dashed blue — is a slower, fake oscillation. Entire fringes
+      vanish.</p>
+      <p class="muted">Notice the slit plane on the left: the slit pair now nearly fills
+      the window. Insufficient sampling in detector space <em>is</em> insufficient
+      padding in real space — the same condition seen from the two planes.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Under-sample the speckle and reconstruction fails the same way — the algorithm
+        cannot tell the true crystal from an aliased ghost. This is why BCDI scans are
+        planned to keep OS comfortably above 2.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="7">
+      <p class="layer">Layer 08 · the condition</p>
+      <h2>The oversampling ratio</h2>
+      <p>Divide sampling rate by signal rate and every quantity on this page collapses
+      into one dimensionless number:</p>
+      <div class="eq">OS = f<sub>samp</sub> / f₀ = <b>zλ / (d·P<sub>D</sub>)</b> = L<sub>s</sub> / d = <span class="am">N / m</span> &nbsp;&gt;&nbsp; 2</div>
+      <p>Detector-geometry form, real-space-length form, pixel-count form — the same
+      number three ways. Satisfy it anywhere and you've satisfied it everywhere.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>Replace <b>d</b> with the crystal size <b>a</b> and the condition is BCDI's
+        verbatim: OS = zλ/(a·P<sub>D</sub>) &gt; 2, and it must hold along
+        <em>every</em> dimension of the 3D pattern.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="8">
+      <p class="layer">Layer 09 · the trade-off</p>
+      <h2>Resolution pulls the other way</h2>
+      <p>The reconstruction's pixel size — your resolution — comes from the
+      <span style="color:var(--green);font-weight:500">green pair</span>, now front
+      and centre on the left: one real-space pixel is tied to the <em>full</em>
+      detector width,</p>
+      <div class="eq"><span class="g">p<sub>s</sub></span> = zλ / (N·P<sub>D</sub>)</div>
+      <p>Here is the tension. Pulling the detector back (increasing <b>z</b>) widens
+      the fringes, so OS rises — good for sampling. But the same move coarsens
+      p<sub>s</sub> — bad for resolution. Moving closer sharpens the picture right up
+      until the fringes outrun the pixels. Both requirements pull on the same lever.</p>
+      <p class="muted">So how good can the resolution get before sampling gives out?</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>The same tug-of-war sets every BCDI beamline geometry: detector distance buys
+        sampling at the cost of resolution, and vice versa.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="9">
+      <p class="layer">Layer 10 · the ceiling</p>
+      <h2>The best resolution sampling allows</h2>
+      <p>Push to the legal limit: OS = 2 exactly. The oversampling condition
+      OS = zλ/(d·P<sub>D</sub>) = 2 pins down the combination
+      zλ/P<sub>D</sub> = 2d. Substitute that into the resolution formula and watch
+      z, λ and P<sub>D</sub> all cancel:</p>
+      <div class="eq">p<sub>s</sub>│<sub>OS=2</sub> = zλ / (N·P<sub>D</sub>) = 2d / N</div>
+      <p>At the sampling threshold the best resolution is fixed by the pixel count
+      <span style="color:var(--amber);font-weight:500">N</span> alone. More resolution
+      requires more pixels — distance can't buy it.</p>
+      <div class="bcdi">
+        <span class="tagb">→ In BCDI</span>
+        <p>With <b>d</b> → crystal size <b>a</b>, the ceiling is 2a/N. Detector format is
+        the only lever that improves BCDI resolution without spending oversampling.</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="10">
+      <p class="layer">Layer 11 · the generalisation</p>
+      <h2>From two slits to a crystal</h2>
+      <p>Everything above is the double slit in one dimension, at zero scattering angle.
+      Real Bragg CDI keeps the exact geometry and adds three things:</p>
+      <p class="muted">① The object is a <strong>3D crystal</strong>, so the pattern is a
+      3D speckle volume and the oversampling condition must hold along every axis —
+      including the rocking direction, swept by rotating the crystal through the Bragg
+      condition.<br>
+      ② The pattern sits around a <strong>Bragg peak</strong>, not the optical axis;
+      the phase of the speckle now encodes lattice <em>strain</em>, not just shape.<br>
+      ③ The slit separation <b>d</b> becomes the crystal's overall size, the cos²
+      fringes become 3D speckle, and the sinc² envelope becomes the peak's shape.</p>
+      <p>Strip those three away and you are left with exactly this page: one transform,
+      one sampling condition, one resolution trade-off.</p>
+    </section>
+
+    <section class="step" data-step="11">
+      <p class="layer">Layer 12 · BCDI numbers</p>
+      <h2>A gold grain at a synchrotron</h2>
+      <p>Typical Bragg CDI setup: <b>9 keV</b> photons (λ = 1.378 Å), a
+      <b>300 nm</b> Au nanocrystal (this is the "slit separation" <b>d</b> — the object's
+      overall size), a photon-counting detector with <b>55 µm</b> pixels and
+      <b>N = 256</b> across the region of interest.</p>
+      <div class="eq">z<sub>min</sub> = 2·d·P<sub>D</sub> / λ ≈ <b>0.24 m</b></div>
+      <div class="eq">at z = 0.5 m: &nbsp;OS ≈ <b>4.2</b>, &nbsp;p<sub>s</sub> ≈ <b>4.9 nm</b>, &nbsp;L<sub>D</sub> ≈ 14.1 mm</div>
+      <p class="muted">Half a metre comfortably clears the threshold and resolves
+      ~5 nm features — strain lobes, facets — across the grain. Try moving everything
+      yourself below.</p>
+    </section>
+
+  </div>
+</div>
+
+<!-- ============ SANDBOX ============ -->
+<section class="sandbox gridbg" id="sandbox">
+  <header>
+    <p class="eyebrow">Free play</p>
+    <h2>The full instrument</h2>
+    <p>Every variable, live. Separation <b>d</b> drives the fringes and the sampling;
+    width <b>w</b> shapes the envelope. Watch the rays, the fringes, and the padding
+    respond together — the status flips the moment you cross OS = 2.</p>
+  </header>
+
+  <div class="sb-grid">
+    <div class="controls">
+      <div class="ctl">
+        <label for="sE">photon energy E <output id="oE">9.0 keV · λ = 1.378 Å</output></label>
+        <input type="range" id="sE" min="5" max="15" step="0.1" value="9">
+      </div>
+      <div class="ctl">
+        <label for="sD">slit separation d <output id="oD">300 nm</output></label>
+        <input type="range" id="sD" min="50" max="1200" step="10" value="300">
+      </div>
+      <div class="ctl">
+        <label for="sW">slit width w <output id="oW">70 nm</output></label>
+        <input type="range" id="sW" min="10" max="600" step="5" value="70">
+      </div>
+      <div class="ctl">
+        <label for="sP"><span>detector pixel P<sub>D</sub></span> <output id="oP">55 µm</output></label>
+        <input type="range" id="sP" min="25" max="200" step="5" value="55">
+      </div>
+      <div class="ctl">
+        <label for="sN">pixels N <output id="oN">256</output></label>
+        <input type="range" id="sN" min="64" max="1024" step="64" value="256">
+      </div>
+      <div class="ctl">
+        <label for="sZ">distance z <output id="oZ">0.50 m</output></label>
+        <input type="range" id="sZ" min="0.05" max="3" step="0.01" value="0.5">
+      </div>
+      <div class="readouts">
+        <div class="ro"><div class="lbl">oversampling OS = zλ/(d·P_D)</div><div class="val" id="rOS">4.18</div></div>
+        <div class="ro"><div class="lbl">resolution p_s = zλ/(N·P_D)</div><div class="val" id="rPS">4.89 nm</div></div>
+        <div class="ro"><div class="lbl">min distance z_min (OS = 2)</div><div class="val" id="rZM">0.24 m</div></div>
+        <div class="ro"><div class="lbl">fringes / envelope ≈ 2d/w</div><div class="val" id="rNF">8.6</div></div>
+        <div class="ro status"><div class="lbl">sampling status</div><div class="val" id="sbStatus">—</div></div>
+      </div>
+      <p class="note">Drag z below ~0.24 m with the defaults and watch the aliased
+      curve appear — and the padding on the slit plane collapse with it. Widen w and the
+      envelope tightens, swallowing the outer fringes, but OS doesn't budge: only
+      separation sets sampling.</p>
+    </div>
+
+    <div>
+      <div class="sb-canvas-wrap gridbg">
+        <canvas id="cv2" width="840" height="640" role="img"
+          aria-label="Live diagram driven by the sliders: double-slit and detector planes with crossing rays, and an interference-fringe profile showing whether the detector pixels sample the fringes faithfully or alias them."></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCE ============ -->
+<section class="reference">
+  <h2>Pocket reference</h2>
+  <div class="refcards">
+    <div class="refcard">
+      <h3>Double-slit pattern</h3>
+      <div class="eq">I(x) ∝ sinc²(w·x/zλ)·cos²(πd·x/zλ)</div>
+      <p>Fast interference fringes (spacing zλ/d, set by the separation) under a slow
+      single-slit envelope (set by the width w). In BCDI the separation d becomes the
+      crystal size and the fringes become Bragg-peak speckle.</p>
+    </div>
+    <div class="refcard">
+      <h3>Reciprocal sampling</h3>
+      <div class="eq">p<sub>s</sub> = zλ / (N·P<sub>D</sub>)<br>P<sub>D</sub> = zλ / (N·p<sub>s</sub>)</div>
+      <p>One Fourier relationship solved two ways. Detector extent sets real-space
+      resolution; window extent sets the detector pitch you need.</p>
+    </div>
+    <div class="refcard">
+      <h3>Oversampling condition</h3>
+      <div class="eq">OS = zλ/(d·P<sub>D</sub>) = L<sub>s</sub>/d = N/m &gt; 2</div>
+      <p>Two samples per interference fringe (Nyquist), equivalently a window at least
+      twice the slit separation. Aim for 3–4 in practice — algorithms are happier away
+      from the edge.</p>
+    </div>
+    <div class="refcard">
+      <h3>Resolution</h3>
+      <div class="eq">p<sub>s</sub> = zλ / (N·P<sub>D</sub>)</div>
+      <p>Set by the full detector width. At the OS = 2 threshold it reduces to
+      2d/N — pixel count is the only lever on resolution that doesn't cost you
+      sampling.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <a href="index.html" style="color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px">← all visualizations</a>
+  &nbsp;·&nbsp;
+  <a href="oversampling_explorer.html" style="color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px">amorphous-object version</a>
+  &nbsp;·&nbsp;
+  Built by Nels Buhrley using Claude Fable 5 based on a whiteboard derivation by Dr. Richard Sandburg ·
+  Variables follow the CDI crash-course notation
+</footer>
+
+<script>
+"use strict";
+/* ================= shared scene renderer ================= */
+const C = {
+  ink:"#22262C", soft:"#7A7F87", orange:"#D9731F", amber:"#B8860B",
+  green:"#1E7D43", red:"#C0392B", blue:"#2B6CB0", paper:"#FBF9F1"
+};
+const W=840, H=640;
+const Sx=215, Dx=645;                 // plane x positions
+const cy=235;                          // optical axis y
+const Ls=232, Ld=296;                  // drawn window heights
+const NV=12;                           // visual pixel count per plane
+const psv=Ls/NV, pdv=Ld/NV;            // visual pixel sizes
+const sTop=cy-Ls/2, sBot=cy+Ls/2;
+const dTop=cy-Ld/2, dBot=cy+Ld/2;
+const stripX0=130, stripX1=710, stripY=478, stripH=118;
+const NSTRIP=22;
+const DEF_SLITW=0.22;                   // default slit width / separation (walkthrough)
+
+function makeDraw(canvas){
+  const ctx=canvas.getContext("2d");
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  ctx.scale(dpr,dpr);
+  return ctx;
+}
+
+function alpha(hex,a){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* measurement bar: vertical line with end caps + label */
+function vbar(ctx,x,y1,y2,color,a,label,side,labelDy){
+  if(a<=0.01) return;
+  ctx.strokeStyle=alpha(color,a); ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(x,y1); ctx.lineTo(x,y2);
+  ctx.moveTo(x-5,y1); ctx.lineTo(x+5,y1);
+  ctx.moveTo(x-5,y2); ctx.lineTo(x+5,y2);
+  ctx.stroke();
+  if(label){
+    ctx.font="500 13px 'IBM Plex Mono', monospace";
+    ctx.textAlign = side==="left" ? "end" : "start";
+    ctx.textBaseline="middle";
+    const lx = side==="left" ? x-10 : x+10;
+    const ly = (y1+y2)/2 + (labelDy||0);
+    ctx.strokeStyle=alpha(C.paper,0.85*Math.min(1,a));
+    ctx.lineWidth=4; ctx.lineJoin="round";
+    ctx.strokeText(label, lx, ly);
+    ctx.fillStyle=alpha(color,a);
+    ctx.fillText(label, lx, ly);
+  }
+}
+
+function arrow(ctx,x1,y1,x2,y2,color,a,w){
+  if(a<=0.01) return;
+  ctx.strokeStyle=alpha(color,a); ctx.lineWidth=w||1.5;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang=Math.atan2(y2-y1,x2-x1);
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(ang-0.4), y2-9*Math.sin(ang-0.4));
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(ang+0.4), y2-9*Math.sin(ang+0.4));
+  ctx.stroke();
+}
+
+function label(ctx,txt,x,y,color,a,align,size,weight){
+  if(a<=0.01) return;
+  ctx.font=`${weight||400} ${size||13}px 'IBM Plex Mono', monospace`;
+  ctx.textAlign=align||"center"; ctx.textBaseline="middle";
+  /* paper halo keeps text legible when rays pass underneath */
+  ctx.strokeStyle=alpha(C.paper,0.85*Math.min(1,a));
+  ctx.lineWidth=4; ctx.lineJoin="round";
+  ctx.strokeText(txt,x,y);
+  ctx.fillStyle=alpha(color,a);
+  ctx.fillText(txt,x,y);
+}
+
+/* the double-slit object: an opaque bar pierced by two transmitting slits.
+   sep = centre-to-centre separation (d), sw = slit width (w) */
+function doubleSlit(ctx,xc,yc,sep,sw,a,fillA){
+  if(a<=0.01) return;
+  const halfX=18;
+  ctx.save();
+  /* opaque screen, drawn as a faint bar spanning the full object extent */
+  ctx.strokeStyle=alpha(C.ink,0.28*a); ctx.lineWidth=1.4;
+  ctx.beginPath();
+  ctx.moveTo(xc,yc-sep/2-sw); ctx.lineTo(xc,yc+sep/2+sw);
+  ctx.stroke();
+  /* the two open slits */
+  for(const cyy of [yc-sep/2, yc+sep/2]){
+    const h=Math.max(3.5,sw);
+    ctx.beginPath();
+    ctx.roundRect(xc-halfX, cyy-h/2, halfX*2, h, 2);
+    ctx.fillStyle=alpha(C.orange,0.16*fillA);
+    ctx.strokeStyle=alpha(C.ink,a);
+    ctx.lineWidth=1.5;
+    ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function sinc2(u){ if(Math.abs(u)<1e-9) return 1; const v=Math.PI*u; return Math.pow(Math.sin(v)/v,2); }
+
+/* double-slit intensity in fringe-spacing units u (one fringe = u→u+1).
+   ratio = d/w sets how many fringes fit under the central envelope. */
+function doubleSlitI(u,ratio){
+  const env=sinc2(u/Math.max(0.8,ratio));
+  const interf=Math.pow(Math.cos(Math.PI*u),2);
+  return env*interf;
+}
+
+function drawStrip(ctx,s,g){
+  const a=s.strip; if(a<=0.01) return;
+  const nstrip=(g&&g.NSTRIP!==undefined)?g.NSTRIP:NSTRIP;
+  const w=stripX1-stripX0;
+  const pd=w/nstrip;
+  const xc=(stripX0+stripX1)/2;
+  const spacing=Math.max(0.55,s.os)*pd;     // fringe spacing in px = OS pixels
+  const slitW=(s.slitW!==undefined && s.slitW>0)?s.slitW:DEF_SLITW;
+  const ratio=1/slitW;                       // d/w → fringes to first envelope zero
+
+  /* frame + pixel ticks */
+  ctx.strokeStyle=alpha(C.ink,0.55*a); ctx.lineWidth=1;
+  ctx.strokeRect(stripX0,stripY,w,stripH);
+  for(let i=1;i<nstrip;i++){
+    const x=stripX0+i*pd;
+    ctx.strokeStyle=alpha(C.ink,0.13*a);
+    ctx.beginPath(); ctx.moveTo(x,stripY); ctx.lineTo(x,stripY+stripH); ctx.stroke();
+  }
+  label(ctx,"detector cross-section · intensity vs x",xc,stripY-14,C.soft,a,"center",12);
+  label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
+
+  const base=stripY+stripH-12, amp=stripH-34;
+  const I=x=>doubleSlitI((x-xc)/spacing,ratio);
+
+  /* single-slit envelope (faint dashed) so the w → envelope link is visible */
+  if(slitW<0.55){
+    ctx.strokeStyle=alpha(C.amber,0.5*a); ctx.lineWidth=1.2; ctx.setLineDash([3,4]);
+    ctx.beginPath();
+    let started=false;
+    for(let px=0;px<=w;px+=1.5){
+      const x=stripX0+px, env=sinc2((x-xc)/(spacing*Math.max(0.8,ratio)));
+      const y=base-amp*env;
+      started?ctx.lineTo(x,y):(ctx.moveTo(x,y),started=true);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  /* true curve (red) */
+  ctx.strokeStyle=alpha(C.red,0.95*a); ctx.lineWidth=1.8;
+  ctx.beginPath();
+  for(let px=0;px<=w;px+=1.5){
+    const x=stripX0+px, y=base-amp*I(x);
+    px===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  /* samples at pixel centers (blue dots) */
+  const da=s.dots*a;
+  const pts=[];
+  for(let i=0;i<nstrip;i++){
+    const x=stripX0+(i+0.5)*pd, y=base-amp*I(x);
+    pts.push([x,y]);
+  }
+  if(da>0.01){
+    /* aliased reconstruction: smooth curve through samples, shown when under-sampled */
+    const showAlias=s.alias*a*(s.os<2.05?1:Math.max(0,(2.5-s.os)/0.45));
+    if(showAlias>0.02){
+      ctx.strokeStyle=alpha(C.blue,0.9*showAlias);
+      ctx.lineWidth=1.8; ctx.setLineDash([6,5]);
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0],pts[0][1]);
+      for(let i=0;i<pts.length-1;i++){
+        const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+        for(let t=0.1;t<=1.001;t+=0.1){
+          const t2=t*t,t3=t2*t;
+          const x=0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3);
+          const y=0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3);
+          ctx.lineTo(x,y);
+        }
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,"what the samples imply",stripX1-8,stripY+18,C.blue,showAlias,"end",12);
+    }
+    for(const [x,y] of pts){
+      ctx.fillStyle=alpha(C.blue,da);
+      ctx.beginPath(); ctx.arc(x,y,3.4,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=alpha(C.blue,0.35*da);
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,base+6); ctx.stroke();
+    }
+    label(ctx,"what the pixels record",stripX1-8,stripY+18,C.blue,
+      da*Math.max(0,1-showAlias*1.6),"end",12);
+  }
+
+  /* fringe-spacing bracket on the true curve */
+  const fb=s.fringeLbl*a;
+  if(fb>0.01){
+    const x1=xc+spacing, x2=xc+2*spacing;
+    if(x2<stripX1-4){
+      ctx.strokeStyle=alpha(C.green,fb); ctx.lineWidth=1.4;
+      ctx.beginPath();
+      ctx.moveTo(x1,base+8); ctx.lineTo(x2,base+8);
+      ctx.moveTo(x1,base+4); ctx.lineTo(x1,base+12);
+      ctx.moveTo(x2,base+4); ctx.lineTo(x2,base+12);
+      ctx.stroke();
+      label(ctx,"zλ/d",(x1+x2)/2,base+22,C.green,fb,"center",12,500);
+    }
+  }
+
+  /* OS chip */
+  if(s.osChip*a>0.01){
+    const txt="OS = "+(Math.round(s.os*10)/10).toFixed(1);
+    const good=s.os>=2;
+    const col=good?C.green:C.red;
+    ctx.font="500 13px 'IBM Plex Mono', monospace";
+    const tw=ctx.measureText(txt).width;
+    const bx=stripX0+8,by=stripY+10;
+    ctx.fillStyle=alpha(col,0.1*s.osChip*a);
+    ctx.strokeStyle=alpha(col,0.85*s.osChip*a);
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.roundRect(bx,by,tw+18,22,11);
+    ctx.fill(); ctx.stroke();
+    label(ctx,txt,bx+9+tw/2,by+11.5,col,s.osChip*a,"center",13,500);
+  }
+}
+
+function drawScene(ctx,s){
+  ctx.clearRect(0,0,W,H);
+
+  /* dynamic geometry: the sandbox passes s.geom, the walkthrough uses defaults */
+  const g=s.geom||{};
+  const dX=g.Dx!==undefined?g.Dx:Dx;
+  const ls=g.Ls!==undefined?g.Ls:Ls;
+  const ld=g.Ld!==undefined?g.Ld:Ld;
+  const nv=g.NV!==undefined?g.NV:NV;
+  const wp=g.wavePer!==undefined?g.wavePer:3.8;
+  const psV=ls/nv, pdV=ld/nv;
+  const sT=cy-ls/2, sB=cy+ls/2;
+  const dT=cy-ld/2, dB=cy+ld/2;
+  const slitW=(s.slitW!==undefined && s.slitW>0)?s.slitW:DEF_SLITW;
+
+  /* ---- beam / z arrow ---- */
+  if(s.beam>0.01){
+    arrow(ctx,Sx+14,72,dX-14,72,C.ink,0.6*s.beam,1.3);
+    label(ctx,"z",(Sx+dX)/2,56,C.ink,0.85*s.beam,"center",14,500);
+    /* incoming wave of wavelength λ, kept left of the object annotations */
+    ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let x=10;x<=58;x+=1){
+      const y=cy+11*Math.sin((x-10)/wp);
+      x===10?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    arrow(ctx,58,cy,70,cy,C.blue,0.8*s.beam,1.5);
+    /* λ bracket spanning one period, crest to crest */
+    const lx1=10+wp*Math.PI/2, lx2=lx1+wp*2*Math.PI;
+    ctx.strokeStyle=alpha(C.blue,0.8*s.beam); ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(lx1,cy-18); ctx.lineTo(lx2,cy-18);
+    ctx.moveTo(lx1,cy-14); ctx.lineTo(lx1,cy-22);
+    ctx.moveTo(lx2,cy-14); ctx.lineTo(lx2,cy-22);
+    ctx.stroke();
+    label(ctx,"λ",(lx1+lx2)/2,cy-31,C.blue,0.9*s.beam,"center",13,500);
+    label(ctx,"ψ = A·e^{ikr}",52,cy+55,C.blue,0.85*s.beam,"center",12.5);
+  }
+
+  /* ---- crossing rays (under planes) ---- */
+  /* red: window edges -> the two edges of the highlighted detector pixel */
+  if(s.raysR>0.01){
+    ctx.strokeStyle=alpha(C.red,0.8*s.raysR); ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(Sx,sT); ctx.lineTo(dX,cy);
+    ctx.moveTo(Sx,sB); ctx.lineTo(dX,cy+pdV);
+    ctx.stroke();
+    label(ctx,"L_s ↔ P_D",Sx+0.7*(dX-Sx),sT+0.7*(cy-sT)-13,C.red,0.9*s.raysR,"center",12.5,500);
+  }
+  /* green: the two edges of the highlighted sample pixel -> detector window edges */
+  if(s.raysG>0.01){
+    ctx.strokeStyle=alpha(C.green,0.8*s.raysG); ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(Sx,cy-psV); ctx.lineTo(dX,dT);
+    ctx.moveTo(Sx,cy); ctx.lineTo(dX,dB);
+    ctx.stroke();
+    label(ctx,"p_s ↔ L_D",Sx+0.7*(dX-Sx),cy+0.7*(dB-cy)+15,C.green,0.9*s.raysG,"center",12.5,500);
+  }
+
+  /* ---- slit plane ---- */
+  if(s.planes>0.01){
+    ctx.strokeStyle=alpha(C.ink,s.planes); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(Sx,sT-16); ctx.lineTo(Sx,sB+16); ctx.stroke();
+    label(ctx,"slit plane",Sx,sB+38,C.ink,0.8*s.planes,"center",12.5);
+  }
+  /* sample ticks */
+  if(s.sGrid>0.01){
+    ctx.strokeStyle=alpha(C.ink,0.75*s.sGrid); ctx.lineWidth=1.2;
+    for(let i=0;i<=nv;i++){
+      const y=sT+i*psV;
+      ctx.beginPath(); ctx.moveTo(Sx-5,y); ctx.lineTo(Sx+5,y); ctx.stroke();
+    }
+    /* highlight the pixel the green rays fan out from */
+    ctx.fillStyle=alpha(C.orange,0.22*s.sGrid);
+    ctx.fillRect(Sx-5,cy-psV,10,psV);
+    label(ctx,"p_s",Sx-14,cy-psV/2,C.orange,s.sGrid,"end",12.5,500);
+  }
+
+  /* double slit + guides */
+  if(s.obj>0.01){
+    const sep=s.objH;
+    const sw=Math.max(4,sep*slitW);
+    doubleSlit(ctx,Sx-92,cy,sep,sw,s.obj,s.obj);
+    vbar(ctx,Sx-145,cy-sep/2,cy+sep/2,C.orange,s.obj,"d","right");
+    vbar(ctx,Sx-66,cy-sep/2-sw/2,cy-sep/2+sw/2,C.amber,0.9*s.obj,"w","right");
+    /* dashed guides from the outer edges onto the plane */
+    ctx.strokeStyle=alpha(C.blue,0.55*s.obj); ctx.setLineDash([5,5]); ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(Sx-74,cy-sep/2); ctx.lineTo(Sx,cy-sep/2);
+    ctx.moveTo(Sx-74,cy+sep/2); ctx.lineTo(Sx,cy+sep/2);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  /* m + N brackets, padding label */
+  if(s.sLabels>0.01){
+    const sep=s.objH;
+    vbar(ctx,Sx+30,cy-sep/2,cy+sep/2,C.amber,s.sLabels,"m = d/p_s","right");
+    vbar(ctx,Sx+118,sT,sB,C.amber,0.85*s.sLabels,"N","right");
+    vbar(ctx,Sx-44,sT,sB,C.orange,0.9*s.sLabels,"L_s","left",-(ls/2)+12);
+    /* padding annotations */
+    const padA=s.sLabels*Math.min(1,Math.max(0,(s.osGeom-1.15)/0.6));
+    label(ctx,"padding",Sx+66,(sT+cy-sep/2)/2,C.soft,0.8*padA,"center",11.5);
+    label(ctx,"(zeros)",Sx+66,(sT+cy-sep/2)/2+14,C.soft,0.6*padA,"center",11.5);
+  }
+
+  /* ---- detector plane ---- */
+  if(s.planes>0.01){
+    ctx.strokeStyle=alpha(C.ink,s.planes); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(dX,dT-16); ctx.lineTo(dX,dB+16); ctx.stroke();
+    label(ctx,"detector plane",dX,dB+38,C.ink,0.8*s.planes,"center",12.5);
+  }
+  if(s.dGrid>0.01){
+    ctx.strokeStyle=alpha(C.ink,0.75*s.dGrid); ctx.lineWidth=1.2;
+    for(let i=0;i<=nv;i++){
+      const y=dT+i*pdV;
+      ctx.beginPath(); ctx.moveTo(dX-5,y); ctx.lineTo(dX+5,y); ctx.stroke();
+    }
+    /* highlight the pixel the red rays converge on */
+    ctx.fillStyle=alpha(C.orange,0.22*s.dGrid);
+    ctx.fillRect(dX-5,cy,10,pdV);
+    label(ctx,"P_D",dX+14,cy+pdV/2,C.orange,s.dGrid,"start",12.5,500);
+    vbar(ctx,dX+52,dT,dB,C.orange,0.9*s.dGrid,"L_D","right");
+    vbar(ctx,dX-34,dT,dB,C.amber,0.85*s.dGrid,"N","left");
+  }
+
+  drawStrip(ctx,s,g);
+}
+
+/* ================= walkthrough state machine ================= */
+const objHFor = osGeom => Ls/Math.max(1.04,osGeom);
+
+const STEPS=[
+  /* 0 two planes   */ {planes:1,beam:1,obj:1,sGrid:0,dGrid:0,sLabels:0,raysR:0,raysG:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 1 sample grid  */ {planes:1,beam:.35,obj:1,sGrid:1,dGrid:0,sLabels:1,raysR:0,raysG:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 2 det grid     */ {planes:1,beam:.25,obj:1,sGrid:1,dGrid:1,sLabels:.55,raysR:0,raysG:0,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 3 rays         */ {planes:1,beam:.15,obj:.85,sGrid:1,dGrid:1,sLabels:.3,raysR:1,raysG:1,strip:0,dots:0,alias:0,fringeLbl:0,osChip:0,os:4,osGeom:3},
+  /* 4 fringes      */ {planes:1,beam:.15,obj:.85,sGrid:.7,dGrid:.7,sLabels:.2,raysR:.5,raysG:.1,strip:1,dots:0,alias:0,fringeLbl:1,osChip:0,os:4,osGeom:3},
+  /* 5 sampling     */ {planes:1,beam:.15,obj:.85,sGrid:.6,dGrid:.85,sLabels:.2,raysR:.4,raysG:.08,strip:1,dots:1,alias:0,fringeLbl:.5,osChip:1,os:4,osGeom:3},
+  /* 6 aliasing     */ {planes:1,beam:.1,obj:1,sGrid:.8,dGrid:.85,sLabels:.75,raysR:.3,raysG:.06,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:1.3,osGeom:1.3},
+  /* 7 condition    */ {planes:1,beam:.1,obj:1,sGrid:.9,dGrid:.9,sLabels:1,raysR:.6,raysG:.15,strip:1,dots:1,alias:1,fringeLbl:0,osChip:1,os:2.5,osGeom:2.5},
+  /* 8 resolution   */ {planes:1,beam:.3,obj:.85,sGrid:1,dGrid:1,sLabels:.5,raysR:.12,raysG:1,strip:1,dots:1,alias:0,fringeLbl:0,osChip:1,os:3,osGeom:3},
+  /* 9 ceiling      */ {planes:1,beam:.2,obj:1,sGrid:1,dGrid:1,sLabels:.8,raysR:.12,raysG:.9,strip:1,dots:1,alias:0,fringeLbl:0,osChip:1,os:2,osGeom:2},
+  /* 10 general BCDI*/ {planes:1,beam:.3,obj:1,sGrid:.85,dGrid:.85,sLabels:.6,raysR:.4,raysG:.4,strip:1,dots:1,alias:0,fringeLbl:.4,osChip:1,os:4,osGeom:3.4},
+  /* 11 gold        */ {planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.7,raysR:.6,raysG:.6,strip:1,dots:1,alias:0,fringeLbl:.4,osChip:1,os:4.2,osGeom:4.2},
+];
+
+const cv=document.getElementById("cv");
+const ctx1=makeDraw(cv);
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let target={...STEPS[0],objH:objHFor(STEPS[0].osGeom)};
+let cur={...target};
+
+const keys=Object.keys(STEPS[0]);
+function setStep(i){
+  const t={...STEPS[Math.max(0,Math.min(STEPS.length-1,i))]};
+  t.objH=objHFor(t.osGeom);
+  target=t;
+  if(reduced){cur={...t};drawScene(ctx1,cur);}
+}
+
+const obs=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting) setStep(+e.target.dataset.step); });
+},{threshold:0.45});
+document.querySelectorAll(".step").forEach(el=>obs.observe(el));
+
+function tick(){
+  if(!reduced){
+    let moving=false;
+    for(const k of [...keys,"objH"]){
+      const d=target[k]-cur[k];
+      if(Math.abs(d)>0.001){cur[k]+=d*0.085;moving=true;}
+      else cur[k]=target[k];
+    }
+    drawScene(ctx1,cur);
+  }
+  requestAnimationFrame(tick);
+}
+drawScene(ctx1,cur);
+requestAnimationFrame(tick);
+
+/* ================= sandbox ================= */
+const cv2=document.getElementById("cv2");
+const ctx2=makeDraw(cv2);
+const $=id=>document.getElementById(id);
+const sE=$("sE"),sD=$("sD"),sW=$("sW"),sP=$("sP"),sN=$("sN"),sZ=$("sZ");
+
+function fmt(v,d){return v.toFixed(d);}
+
+function sandbox(){
+  const E=+sE.value;                  // keV
+  const d=+sD.value*1e-9;             // m  (slit separation)
+  const wsl=+sW.value*1e-9;           // m  (slit width)
+  const Pd=+sP.value*1e-6;            // m
+  const N=+sN.value;
+  const z=+sZ.value;                  // m
+  const lam=12.398/E*1e-10;           // m
+  const a=d;                          // governing object size
+
+  const OS=z*lam/(a*Pd);
+  const ps=z*lam/(N*Pd);
+  const zmin=2*a*Pd/lam;
+  const LD=N*Pd;
+  const nFr=2*d/wsl;
+
+  $("oE").textContent=`${fmt(E,1)} keV · λ = ${fmt(lam*1e10,3)} Å`;
+  $("oD").textContent=`${sD.value} nm`;
+  $("oW").textContent=`${sW.value} nm`;
+  $("oP").textContent=`${sP.value} µm`;
+  $("oN").textContent=sN.value;
+  $("oZ").textContent=`${fmt(z,2)} m`;
+
+  $("rOS").textContent=fmt(OS,2);
+  $("rPS").textContent=ps<1e-9?fmt(ps*1e12,0)+" pm":fmt(ps*1e9,2)+" nm";
+  $("rZM").textContent=fmt(zmin,2)+" m";
+  $("rNF").textContent=fmt(nFr,1);
+
+  const st=$("sbStatus");
+  if(OS<2){st.textContent="aliased — OS < 2";st.className="val bad";}
+  else if(OS<2.5){st.textContent="marginal — near threshold";st.className="val warn";}
+  else{st.textContent="oversampled ✓";st.className="val ok";}
+
+  const osV=Math.max(0.6,Math.min(8,OS));
+  const slitW=Math.min(0.6,Math.max(0.04,wsl/d));
+  /* visual geometry: monotone compressed mappings (not to scale, correct direction
+     and proportion) so every slider visibly moves its part of the figure */
+  const Nr=N/256, Pr=Pd/55e-6, zr=z/0.5, lr=lam/1.3776e-10;
+  const geom={
+    Dx:Math.min(700,Math.round(380+340*Math.cbrt(z/3))),
+    Ls:Math.min(330,Math.max(110,232*Math.pow(zr*lr/Pr,0.4))),
+    Ld:Math.min(340,Math.max(140,296*Math.pow(Nr*Pr,0.4))),
+    NV:Math.max(4,Math.round(12*Math.pow(Nr,0.4))),
+    NSTRIP:Math.max(8,Math.round(22*Math.pow(Nr,0.4))),
+    wavePer:Math.min(5.9,Math.max(2.4,3.8*Math.pow(9/E,0.8)))
+  };
+  drawScene(ctx2,{
+    planes:1,beam:.3,obj:1,sGrid:1,dGrid:1,sLabels:.85,raysR:.7,raysG:.7,
+    strip:1,dots:1,alias:1,fringeLbl:.4,osChip:1,
+    os:osV,osGeom:osV,objH:geom.Ls/Math.max(1.04,osV),slitW,geom
+  });
+}
+[sE,sD,sW,sP,sN,sZ].forEach(el=>el.addEventListener("input",sandbox));
+sandbox();
+</script>
+</body>
+</html>
