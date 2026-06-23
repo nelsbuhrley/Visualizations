@@ -60,7 +60,8 @@ Single-file, dependency-free webpage (vanilla HTML/CSS/JS, no build step, no lib
   - Object height: $\text{objH} = \frac{L_s}{\text{osGeom}}$ (geometric padding stays consistent with OS)
 
 ### Fringe strip
-- Draws sinc² with fringe spacing = `os × strip pixel pitch`
+- Draws sinc² with fringe spacing = `os × strip pixel pitch`, raised to `STRIP_GAMMA` (0.55) so side fringes read boldly — a display gamma, like log-scaled diffraction data; zeros stay at integer spacings so Nyquist/aliasing are unchanged. `NSTRIP` (16) keeps the fringes large.
+- Object is an irregular faceted crystal grain (`GRAIN` polygon in `blob()`), not a smooth lobe.
 - Sample dots at pixel centers
 - Catmull-Rom curve through dots shows aliased reconstruction
 - Fade-in only when OS < ~2.5

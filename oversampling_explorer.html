@@ -446,7 +446,8 @@ const psv=Ls/NV, pdv=Ld/NV;            // visual pixel sizes
 const sTop=cy-Ls/2, sBot=cy+Ls/2;
 const dTop=cy-Ld/2, dBot=cy+Ld/2;
 const stripX0=130, stripX1=710, stripY=478, stripH=118;
-const NSTRIP=22;
+const NSTRIP=16;
+const STRIP_GAMMA=0.55;   // display gamma — lifts side fringes the way log-scaled diffraction data does
 
 function makeDraw(canvas){
   const ctx=canvas.getContext("2d");
@@ -509,16 +510,20 @@ function label(ctx,txt,x,y,color,a,align,size,weight){
   ctx.fillText(txt,x,y);
 }
 
-/* the object blob */
+/* the object: an irregular faceted crystal grain (flat facets, asymmetric) */
+const GRAIN=[
+  [-0.14,-0.50],[0.20,-0.46],[0.40,-0.18],[0.36,0.16],
+  [0.16,0.50],[-0.22,0.46],[-0.40,0.12],[-0.34,-0.20]
+];
 function blob(ctx,xc,yc,h,a,fillA){
   if(a<=0.01) return;
-  const w=h*0.55;
   ctx.save();
   ctx.translate(xc,yc);
   ctx.beginPath();
-  ctx.moveTo(0,-h/2);
-  ctx.bezierCurveTo(w*0.62,-h/2+h*0.06, w*0.55,h*0.28, 0,h/2);
-  ctx.bezierCurveTo(-w*0.58,h*0.34, -w*0.5,-h*0.3, 0,-h/2);
+  GRAIN.forEach(([px,py],i)=>{
+    const X=px*h, Y=py*h;
+    i===0?ctx.moveTo(X,Y):ctx.lineTo(X,Y);
+  });
   ctx.closePath();
   ctx.fillStyle=alpha(C.orange,0.13*fillA);
   ctx.strokeStyle=alpha(C.ink,a);
@@ -550,7 +555,7 @@ function drawStrip(ctx,s,g){
   label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
 
   const base=stripY+stripH-12, amp=stripH-34;
-  const I=x=>sinc2((x-xc)/spacing);
+  const I=x=>Math.pow(sinc2((x-xc)/spacing),STRIP_GAMMA);
 
   /* true curve (red) */
   ctx.strokeStyle=alpha(C.red,0.95*a); ctx.lineWidth=1.8;
@@ -855,7 +860,7 @@ function sandbox(){
     Ls:Math.min(330,Math.max(110,232*Math.pow(zr*lr/Pr,0.4))),
     Ld:Math.min(340,Math.max(140,296*Math.pow(Nr*Pr,0.4))),
     NV:Math.max(4,Math.round(12*Math.pow(Nr,0.4))),
-    NSTRIP:Math.max(8,Math.round(22*Math.pow(Nr,0.4))),
+    NSTRIP:Math.max(6,Math.round(16*Math.pow(Nr,0.4))),
     wavePer:Math.min(5.9,Math.max(2.4,3.8*Math.pow(9/E,0.8)))
   };
   drawScene(ctx2,{
