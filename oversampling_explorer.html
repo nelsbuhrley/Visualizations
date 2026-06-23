@@ -446,7 +446,7 @@ const psv=Ls/NV, pdv=Ld/NV;            // visual pixel sizes
 const sTop=cy-Ls/2, sBot=cy+Ls/2;
 const dTop=cy-Ld/2, dBot=cy+Ld/2;
 const stripX0=130, stripX1=710, stripY=478, stripH=118;
-const NSTRIP=16;
+const NSTRIP=10;
 const STRIP_GAMMA=0.55;   // display gamma — lifts side fringes the way log-scaled diffraction data does
 const STRIP_FLOOR=0.03;   // ε softens the gamma'd nulls back into rounded (not cusped) minima
 const STRIP_NORM=Math.pow(1+STRIP_FLOOR,STRIP_GAMMA)-Math.pow(STRIP_FLOOR,STRIP_GAMMA);
@@ -560,7 +560,7 @@ function drawStrip(ctx,s,g){
   label(ctx,"detector cross-section · intensity vs x",xc,stripY-14,C.soft,a,"center",12);
   label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
 
-  const base=stripY+stripH-12, amp=stripH-34;
+  const base=stripY+stripH-12, amp=stripH-26;
   const I=x=>stripGamma(sinc2((x-xc)/spacing));
 
   /* true curve (red) */
@@ -612,7 +612,7 @@ function drawStrip(ctx,s,g){
   /* fringe-spacing bracket on the true curve */
   const fb=s.fringeLbl*a;
   if(fb>0.01){
-    const x1=xc+spacing, x2=xc+2*spacing;
+    const x1=xc, x2=xc+spacing;
     if(x2<stripX1-4){
       ctx.strokeStyle=alpha(C.green,fb); ctx.lineWidth=1.4;
       ctx.beginPath();
@@ -866,7 +866,7 @@ function sandbox(){
     Ls:Math.min(330,Math.max(110,232*Math.pow(zr*lr/Pr,0.4))),
     Ld:Math.min(340,Math.max(140,296*Math.pow(Nr*Pr,0.4))),
     NV:Math.max(4,Math.round(12*Math.pow(Nr,0.4))),
-    NSTRIP:Math.max(6,Math.round(16*Math.pow(Nr,0.4))),
+    NSTRIP:Math.max(6,Math.round(10*Math.pow(Nr,0.4))),
     wavePer:Math.min(5.9,Math.max(2.4,3.8*Math.pow(9/E,0.8)))
   };
   drawScene(ctx2,{
