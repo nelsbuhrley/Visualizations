@@ -448,6 +448,12 @@ const dTop=cy-Ld/2, dBot=cy+Ld/2;
 const stripX0=130, stripX1=710, stripY=478, stripH=118;
 const NSTRIP=16;
 const STRIP_GAMMA=0.55;   // display gamma — lifts side fringes the way log-scaled diffraction data does
+const STRIP_FLOOR=0.03;   // ε softens the gamma'd nulls back into rounded (not cusped) minima
+const STRIP_NORM=Math.pow(1+STRIP_FLOOR,STRIP_GAMMA)-Math.pow(STRIP_FLOOR,STRIP_GAMMA);
+/* lift weak fringes for drama, but keep nulls smooth and true zeros at integer spacings */
+function stripGamma(y){
+  return (Math.pow(y+STRIP_FLOOR,STRIP_GAMMA)-Math.pow(STRIP_FLOOR,STRIP_GAMMA))/STRIP_NORM;
+}
 
 function makeDraw(canvas){
   const ctx=canvas.getContext("2d");
@@ -555,7 +561,7 @@ function drawStrip(ctx,s,g){
   label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
 
   const base=stripY+stripH-12, amp=stripH-34;
-  const I=x=>Math.pow(sinc2((x-xc)/spacing),STRIP_GAMMA);
+  const I=x=>stripGamma(sinc2((x-xc)/spacing));
 
   /* true curve (red) */
   ctx.strokeStyle=alpha(C.red,0.95*a); ctx.lineWidth=1.8;
