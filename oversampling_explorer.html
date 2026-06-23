@@ -446,14 +446,8 @@ const psv=Ls/NV, pdv=Ld/NV;            // visual pixel sizes
 const sTop=cy-Ls/2, sBot=cy+Ls/2;
 const dTop=cy-Ld/2, dBot=cy+Ld/2;
 const stripX0=130, stripX1=710, stripY=478, stripH=118;
-const NSTRIP=10;
-const STRIP_GAMMA=0.55;   // display gamma — lifts side fringes the way log-scaled diffraction data does
-const STRIP_FLOOR=0.03;   // ε softens the gamma'd nulls back into rounded (not cusped) minima
-const STRIP_NORM=Math.pow(1+STRIP_FLOOR,STRIP_GAMMA)-Math.pow(STRIP_FLOOR,STRIP_GAMMA);
-/* lift weak fringes for drama, but keep nulls smooth and true zeros at integer spacings */
-function stripGamma(y){
-  return (Math.pow(y+STRIP_FLOOR,STRIP_GAMMA)-Math.pow(STRIP_FLOOR,STRIP_GAMMA))/STRIP_NORM;
-}
+const NSTRIP=12;
+const STRIP_SIDE_MULT=2;  // artificially scale everything outside the central (first) lobe by this factor so the weak side fringes read big — the cut is at the first null (value 0) so it stays continuous; sinc² shape, peak and zeros preserved, no clipping
 
 function makeDraw(canvas){
   const ctx=canvas.getContext("2d");
@@ -560,8 +554,11 @@ function drawStrip(ctx,s,g){
   label(ctx,"detector cross-section · intensity vs x",xc,stripY-14,C.soft,a,"center",12);
   label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
 
-  const base=stripY+stripH-12, amp=stripH-26;
-  const I=x=>stripGamma(sinc2((x-xc)/spacing));
+  const base=stripY+stripH-12, amp=base-stripY-6;
+  const I=x=>{
+    const u=(x-xc)/spacing, s=sinc2(u);
+    return Math.abs(u)>1 ? s*STRIP_SIDE_MULT : s;   // boost only the side lobes (outside the first null)
+  };
 
   /* true curve (red) */
   ctx.strokeStyle=alpha(C.red,0.95*a); ctx.lineWidth=1.8;
@@ -866,7 +863,7 @@ function sandbox(){
     Ls:Math.min(330,Math.max(110,232*Math.pow(zr*lr/Pr,0.4))),
     Ld:Math.min(340,Math.max(140,296*Math.pow(Nr*Pr,0.4))),
     NV:Math.max(4,Math.round(12*Math.pow(Nr,0.4))),
-    NSTRIP:Math.max(6,Math.round(10*Math.pow(Nr,0.4))),
+    NSTRIP:Math.max(6,Math.round(12*Math.pow(Nr,0.4))),
     wavePer:Math.min(5.9,Math.max(2.4,3.8*Math.pow(9/E,0.8)))
   };
   drawScene(ctx2,{
