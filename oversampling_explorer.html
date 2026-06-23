@@ -447,7 +447,7 @@ const sTop=cy-Ls/2, sBot=cy+Ls/2;
 const dTop=cy-Ld/2, dBot=cy+Ld/2;
 const stripX0=130, stripX1=710, stripY=478, stripH=118;
 const NSTRIP=12;
-const STRIP_SIDE_MULT=2;  // artificially scale everything outside the central (first) lobe by this factor so the weak side fringes read big — the cut is at the first null (value 0) so it stays continuous; sinc² shape, peak and zeros preserved, no clipping
+const STRIP_SIDE_MULT=12;  // artificially scale everything outside the central (first) lobe by this factor so the weak side fringes read big — the cut is at the first null (value 0) so it stays continuous; sinc² shape, peak and zeros preserved, no clipping
 
 function makeDraw(canvas){
   const ctx=canvas.getContext("2d");
