@@ -635,6 +635,7 @@ function doubleSlit(ctx,xc,yc,sep,sw,a,fillA){
 }
 
 function sinc2(u){ if(Math.abs(u)<1e-9) return 1; const v=Math.PI*u; return Math.pow(Math.sin(v)/v,2); }
+function sincf(t){ if(Math.abs(t)<1e-9) return 1; const v=Math.PI*t; return Math.sin(v)/v; }
 
 /* double-slit intensity in fringe-spacing units u (one fringe = u→u+1).
    ratio = d/w sets how many fringes fit under the central envelope. */
@@ -649,7 +650,10 @@ function drawStrip(ctx,s,g){
   const nstrip=(g&&g.NSTRIP!==undefined)?g.NSTRIP:NSTRIP;
   const w=stripX1-stripX0;
   const pd=w/nstrip;
-  const xc=(stripX0+stripX1)/2;
+  const xm=(stripX0+stripX1)/2;
+  /* the pattern peak sits on a pixel centre, the way a detector is actually aligned;
+     straddling it puts every sample on a fringe half-height and fakes an alias */
+  const xc=stripX0+(Math.floor(nstrip/2)+0.5)*pd;
   const spacing=Math.max(0.55,s.os)*pd;     // fringe spacing in px = OS pixels
   const slitW=(s.slitW!==undefined && s.slitW>0)?s.slitW:DEF_SLITW;
   const ratio=1/slitW;                       // d/w → fringes to first envelope zero
@@ -662,7 +666,7 @@ function drawStrip(ctx,s,g){
     ctx.strokeStyle=alpha(C.ink,0.13*a);
     ctx.beginPath(); ctx.moveTo(x,stripY); ctx.lineTo(x,stripY+stripH); ctx.stroke();
   }
-  label(ctx,"detector cross-section · intensity vs x",xc,stripY-14,C.soft,a,"center",12);
+  label(ctx,"detector cross-section · intensity vs x",xm,stripY-14,C.soft,a,"center",12);
   label(ctx,"P_D",stripX0+pd/2,stripY+stripH+14,C.orange,a*0.9,"center",11.5);
 
   const base=stripY+stripH-12, amp=stripH-34;
@@ -698,21 +702,26 @@ function drawStrip(ctx,s,g){
     pts.push([x,y]);
   }
   if(da>0.01){
-    /* aliased reconstruction: smooth curve through samples, shown when under-sampled */
-    const showAlias=s.alias*a*(s.os<2.05?1:Math.max(0,(2.5-s.os)/0.45));
+    /* Whittaker-Shannon reconstruction, not a spline: it passes through every dot
+       and only departs from the true curve once the samples really are below
+       Nyquist, so nothing looks aliased while OS is still above 2 */
+    const showAlias=s.alias*a*Math.max(0,Math.min(1,(2-s.os)/0.15));
     if(showAlias>0.02){
+      const ext=3*nstrip;
+      const recon=x=>{
+        let sum=0;
+        for(let i=-ext;i<nstrip+ext;i++){
+          const xi=stripX0+(i+0.5)*pd;
+          sum+=I(xi)*sincf((x-xi)/pd);
+        }
+        return sum;
+      };
       ctx.strokeStyle=alpha(C.blue,0.9*showAlias);
       ctx.lineWidth=1.8; ctx.setLineDash([6,5]);
       ctx.beginPath();
-      ctx.moveTo(pts[0][0],pts[0][1]);
-      for(let i=0;i<pts.length-1;i++){
-        const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
-        for(let t=0.1;t<=1.001;t+=0.1){
-          const t2=t*t,t3=t2*t;
-          const x=0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3);
-          const y=0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3);
-          ctx.lineTo(x,y);
-        }
+      for(let px=0;px<=w;px+=2){
+        const x=stripX0+px, y=base-amp*Math.max(-0.1,Math.min(1,recon(x)));
+        px===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
       }
       ctx.stroke(); ctx.setLineDash([]);
       label(ctx,"what the samples imply",stripX1-8,stripY+18,C.blue,showAlias,"end",12);
